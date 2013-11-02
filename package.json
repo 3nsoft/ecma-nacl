@@ -1,0 +1,27 @@
+{
+  "name": "ecma-nacl",
+  "version": "1.0.0",
+  "description": "JavaScript (ECMAScript) version of NaCl Cryptographic library",
+  "main": "./lib/ecma-nacl.js",
+  "repository": {
+	"type": "git",
+	"url": "https://github.com/cubicbase/ecma-nacl.git"
+  },
+  "engines": {
+    "node": "*"
+  },
+ "keywords": [
+    "encryption",
+    "high-level",
+    "crypto",
+    "nacl"
+  ],
+  "contributors": [
+    { "name": "Mikalai Birukou",
+      "email": "mikalai@birukou.net" }
+  ],
+  "license": {
+	  "type": "MPLv2.0",
+	  "url": "http://mozilla.org/MPL/2.0/"},
+  "readmeFilename": "README.md"
+}
