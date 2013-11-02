@@ -8,8 +8,7 @@ ecma-nacl is a re-write of most important NaCl's functionality, which is ready f
 
 Rewrite is based on the copy of NaCl, included in this repository.
 Tests are written to correspond those in C code, to make sure that output of this library is the same as that of C's version.
-Besides this, we added comparison runs between ecma-nacl,Modern js has TypedArrays, which makes this rewrite of C code into js a straightforward matter.
- and js-nacl, which is an [Emscripten](https://github.com/kripken/emscripten)-compilation of C library.
+Besides this, we added comparison runs between ecma-nacl, and js-nacl, which is an [Emscripten](https://github.com/kripken/emscripten)-compilation of C library.
 These comparison runs can be done in both node and browsers.
 
 Your mileage may vary, but just three weeks ago, js-nacl was running 10% faster on Chrome.
