@@ -1,10 +1,10 @@
 # ecma-nacl: Pure JavaScript (ECMAScript) version of NaCl cryptographic library.
 
-[NaCl](http://nacl.cr.yp.to/) is a greate crypto library that is not placing a burden of crypto-math choices onto developers, providing only solid high-level functionality (box - for public-key, and secret_box - for secret key  authenticated encryption).
-Take a look at reasons behind NaCl's design  "[The security impact of a new cryptographic
+[NaCl](http://nacl.cr.yp.to/) is a great crypto library that is not placing a burden of crypto-math choices onto developers, providing only solid high-level functionality (box - for public-key, and secret_box - for secret key  authenticated encryption), in a let's [stop blaming users](http://cr.yp.to/talks/2012.08.08/slides.pdf) of cryptographic library (e.g. end product developers, or us) manner.
+Take a look at details of NaCl's design  "[The security impact of a new cryptographic
 library](http://cr.yp.to/highspeed/coolnacl-20120725.pdf)".
 
-ecma-nacl is a re-write of most important NaCl's functionality, which is ready for production (signing code still has XXX comments, indicating that the warning in [signing in NaCl](http://nacl.cr.yp.to/sign.html) should be taken seriously.
+ecma-nacl is a re-write of most important NaCl's functionality, which is ready for production, box and secret_box. Signing code still has XXX comments, indicating that the warning in [signing in NaCl](http://nacl.cr.yp.to/sign.html) should be taken seriously.
 
 Rewrite is based on the copy of NaCl, included in this repository.
 Tests are written to correspond those in C code, to make sure that output of this library is the same as that of C's version.
@@ -14,6 +14,17 @@ These comparison runs can be done in both node and browsers.
 Your mileage may vary, but just three weeks ago, js-nacl was running 10% faster on Chrome.
 Today, with new version of Chrome, it is ecma-nacl that is faster.
 Given smaller size, and much better auditability of actual js code, ecma-nacl might be more preferable than js-nacl.
+
+## NPM Package
+
+This library is [registered on
+npmjs.org](https://npmjs.org/package/ecma-nacl). To install it:
+
+    npm install ecma-nacl
+
+## Browser Package
+
+make-browserified.js will let you make a browserified module. So, make sure that you have [browserify module](http://browserify.org/) to run the script. You may also modify it to suite your particular needs.
 
 ## XSP file format
 Each NaCl's cipher must be read completely, before any plain text output.
