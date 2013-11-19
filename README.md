@@ -43,6 +43,8 @@ Add module into code as
 
 Above methods pack & open bytes, exactly like NaCl does. Cipher is 16 bytes longer than plain text bytes. And these 16 bytes, filed with Poly1305 authenticating output, are placed infront of all bytes with the message.
 
+Opened byte arrays are based on buffers, with first 32 zero bytes. This should always be kept in mind, when transferring raw decrypted buffers to/from web-workers. In all other places, this padding is never noticed, thanks to [typed array api](https://developer.mozilla.org/en-US/docs/Web/API/Uint8Array).
+
 Key here is 32 bytes long. Nonce is 24 bytes. Nonce means number-used-once, i.e. it should be unique for every encrypted segment. Sometimes, when storing things, it is convenient to have nonce packed into cipher array. For this, secret_box has formatWN object, which is used analogously:
 
     // encrypting, and placing nonce as first 24 bytes infront NaCl's byte output layout
