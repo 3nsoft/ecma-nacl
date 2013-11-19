@@ -142,7 +142,7 @@ Bob's side:
     var cipher_to_send = encryptor.pack(msg_bytes);
 
     // open mesages from alice
-    var msg_from_bob = encryptor.open(received_cipher);
+    var msg_from_alice = encryptor.open(received_cipher);
 
 ## Random number generation
 
