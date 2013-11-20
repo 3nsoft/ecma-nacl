@@ -68,13 +68,12 @@ It is important to always use different nonce, when encrypting something new wit
     // nonce changed in place evenly
     nacl.advanceNonceEvenly(nonce);
 
-It is common, that certain code needs to be given encryption/decryption functionality, but according to [principle of least authority](https://en.wikipedia.org/wiki/Principle_of_least_privilege) such code does not necessarily need to know secret key, with which encryption is done. So, there is an encryptor for opening and packing, with inbuilt even advance of the nonce, on every new cipher that is generated.
+It is common, that certain code needs to be given encryption/decryption functionality, but according to [principle of least authority](https://en.wikipedia.org/wiki/Principle_of_least_privilege) such code does not necessarily need to know secret key, with which encryption is done. So, there is an encryptor for opening and packing, with inbuilt even advance of the nonce, on every new cipher that is generated. It is made to produce and read ciphers with-nonce format.
 
-    // encryptor can be created with, indication, if cipher should be with-nonce
-    var encryptor = nacl.makeSecretBoxEncryptor(key, nextNonce, isFormatWN);
+    var encryptor = nacl.makeSecretBoxEncryptor(key, nextNonce);
 
     // or with
-    var encryptor = nacl.secret_box.makeEncryptor(key, nextNonce, isFormatWN);
+    var encryptor = nacl.secret_box.makeEncryptor(key, nextNonce);
 
     // packing bytes is done with
     var cipher_bytes = encryptor.pack(plain_bytes);
