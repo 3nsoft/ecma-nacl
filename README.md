@@ -114,16 +114,16 @@ Alice's side:
     crypto.getRandomValues(nonce);
 
     // make encryptor
-    var encryptor = nacl.makeSecretBoxEncryptor(dhshared_key, nonce, true);
+    var encryptor = nacl.makeSecretBoxEncryptor(dhshared_key, nonce);
 
     // dhshared_key was copied into encryptor, and, since it is no longer needed,
     // it should be wiped from the memory
     nacl.TypedArraysFactory.prototype.wipe(dhshared_key);
 
-    // pack messages to bob
+    // pack messages to Bob
     var cipher_to_send = encryptor.pack(msg_bytes);
 
-    // open mesages from bob
+    // open mesages from Bob
     var msg_from_bob = encryptor.open(received_cipher);
 
 Bob's side:
@@ -131,22 +131,22 @@ Bob's side:
     // calculate DH-shared key for encryptor
     var dhshared_key = nacl.box.calc_dhshared_key(alice_pkey, bob_skey);
 
-    // get nonce from alice's first message, advance it oddly, and
+    // get nonce from Alice's first message, advance it oddly, and
     // use for encryptor, as encryptors on both sides advance nonces evenly
     var nonce = nacl.secret_box.formatWN.copyNonceFrom(cipher1_from_alice);
     nacl.advanceNonceOddly(nonce);
 
     // make encryptor
-    var encryptor = nacl.makeSecretBoxEncryptor(dhshared_key, nonce, true);
+    var encryptor = nacl.makeSecretBoxEncryptor(dhshared_key, nonce);
 
     // dhshared_key was copied into encryptor, and, since it is no longer needed,
     // it should be wiped from the memory
     nacl.TypedArraysFactory.prototype.wipe(dhshared_key);
 
-    // pack messages to alice
+    // pack messages to Alice
     var cipher_to_send = encryptor.pack(msg_bytes);
 
-    // open mesages from alice
+    // open mesages from Alice
     var msg_from_alice = encryptor.open(received_cipher);
 
 ## Random number generation
