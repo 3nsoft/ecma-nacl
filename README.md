@@ -14,9 +14,9 @@ These comparison runs can be done in both node and browsers.
 As of version 0.5, js-nacl is properly compiled into [asm.js](http://asmjs.org/spec/latest/) code, recognized by Firefox.
 Proper asm.js does run two times faster than pure js.
 So, we have a tradeoff here: with js-nacl one gets speed, which realistically matters on client side when encrypting 100s MBs of data, and with ecma-nacl one gets smaller library size and better auditability.
-Asm.js might still be a moving target, while ecma-nacl is exploiting only those JS features that has already been widely implemented.  
+Asm.js might still be a moving target, while ecma-nacl is exploiting only those JS features that has already been widely implemented.
 At the same time, js-nacl keeps C-ish api, while ecma-nacl is providing JS-ish api, adding convenient packaging features.
-In fact, we are confident, that things like XPS file format, introduced in ecma-nacl api, shall spread beyond JS implementations of NaCl.
+In fact, we are confident, that things like XSP file format, introduced in ecma-nacl api, shall spread beyond JS implementations of NaCl.
 
 ## NPM Package
 
