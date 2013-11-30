@@ -1,5 +1,5 @@
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -102,7 +102,7 @@ module.exports = {
 Object.freeze(module.exports);
 
 },{"../util/arrays":10,"./core":2,"./scalarmult":4,"./secret_box":5,"./stream":6}],2:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -377,7 +377,7 @@ module.exports = {
 		hsalsa20: hsalsa20
 };
 },{}],3:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -558,7 +558,7 @@ module.exports = {
 		poly1305_verify: crypto_onetimeauth_verify
 };
 },{"../util/int32":11,"../util/verify":12}],4:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -962,7 +962,7 @@ module.exports = {
 		curve25519_base: crypto_scalarmult_base
 };
 },{"../util/arrays":10,"../util/int32":11}],5:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1137,7 +1137,7 @@ module.exports = {
 Object.freeze(module.exports);
 
 },{"../util/arrays":10,"./onetimeauth":3,"./stream":6}],6:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1347,7 +1347,7 @@ module.exports = {
 },{"../util/arrays":10,"./core":2}],"ecma-nacl":[function(require,module,exports){
 module.exports=require('5PDy5J');
 },{}],"5PDy5J":[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1541,7 +1541,7 @@ module.exports = {
 Object.freeze(module.exports);
 
 },{"./boxes/box":1,"./boxes/secret_box":5,"./file/xsp":9,"./util/arrays":10,"./util/verify":12}],9:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1788,7 +1788,7 @@ module.exports = {
 		posInFileOf: posInFileOf
 };
 },{"../boxes/secret_box":5}],10:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1982,7 +1982,7 @@ Object.freeze(TypedArraysFactory.prototype);
 module.exports = TypedArraysFactory;
 
 },{}],11:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2036,7 +2036,7 @@ module.exports = {
 		multChecked: multChecked
 };
 },{}],12:[function(require,module,exports){
-/* Copyright(c) 2013 Cubic Base Inc.
+/* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */

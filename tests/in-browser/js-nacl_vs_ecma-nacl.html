@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Comparison runs of ecma-nacl and js-nacl</title>
 <script type="text/javascript" src="./ecma-nacl_browserified.js"></script>
-<script type="text/javascript" src="js-nacl.js"></script>
+<script type="text/javascript" src="nacl_factory.js"></script>
 <script type="text/javascript">
 	// functions used for both synch and web worker using tests 
 	function getRandom(numOfBytes) {
@@ -49,7 +49,7 @@
 	var sbox = ecmaNacl.secret_box
 	, box = ecmaNacl.box
 	, compareVectors = ecmaNacl.compareVectors
-	, js_nacl = nacl;
+	, js_nacl = nacl_factory.instantiate();
 
 	function timeSynchBoxEncryption(numOfRuns, msgKs) {
 		"use strict";

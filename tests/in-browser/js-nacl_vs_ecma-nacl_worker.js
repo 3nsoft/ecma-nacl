@@ -3,8 +3,8 @@ if ('undefined' !== typeof window) { throw new Error(
 
 importScripts("./ecma-nacl_browserified.js");
 // js-nacl can be attached either into window object (not here), or module, which we fake here.
-importScripts("js-nacl.js");
-var js_nacl = nacl
+importScripts("nacl_factory.js");
+var js_nacl = nacl_factory.instantiate()
 , ecmaNacl = require('ecma-nacl');
 
 self.addEventListener('message', function(e) {

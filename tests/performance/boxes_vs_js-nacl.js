@@ -5,7 +5,7 @@
  */
 
 try {
-	var js_nacl = require('js-nacl');
+	var js_nacl = require('js-nacl').instantiate();
 } catch (err) {
 	console.log("To run this performance comparison, js-nacl should be accessable with require()");
 }
