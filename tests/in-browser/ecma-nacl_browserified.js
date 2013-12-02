@@ -17,6 +17,7 @@ var SIGMA = require('./stream').SIGMA;
  * @returns Uint8Array with 32 bytes of a public key, that corresponds given secret key. 
  */
 function generate_pubkey(sk) {
+	"use strict";
 	if (sk.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Key array k must be Uint8Array."); }
 	if (sk.length !== 32) { throw new Error(
 			"Key array sk should have 32 elements (bytes) in it, but it is "+
@@ -40,6 +41,7 @@ var n_to_calc_dhshared_key = new Uint8Array(16);
  * @returns Uint8Array with 32 bytes of stream key for the box, under given public and secret keys.
  */
 function calc_dhshared_key(pk, sk, arrFactory) {
+	"use strict";
 	if (pk.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Public key array pk must be Uint8Array."); }
 	if (pk.length !== 32) { throw new Error(
 			"Public key array pk should have 32 elements (bytes) in it, but it is "+
@@ -69,6 +71,7 @@ function calc_dhshared_key(pk, sk, arrFactory) {
  * NaCl's xsalsa20+poly1305 secret-box bytes layout, trimmed of initial zeros.
  */
 function pack_box(m, n, pk, sk, arrFactory) {
+	"use strict";
 	var k = calc_dhshared_key(pk, sk, arrFactory);
 	return sbox.pack(m,n,k,arrFactory);
 }
@@ -85,6 +88,7 @@ function pack_box(m, n, pk, sk, arrFactory) {
  * @throws Error when cipher bytes fail verification.
  */
 function open_box( c, n, pk, sk, arrFactory) {
+	"use strict";
 	var k = calc_dhshared_key(pk, sk, arrFactory);
 	return sbox.open(c,n,k,arrFactory);
 }
@@ -114,6 +118,7 @@ Object.freeze(module.exports);
  * @returns number within uint32 limits, loaded in a littleendian manner from a given array.
  */
 function load_littleendian(x, i) {
+	"use strict";
 	return x[i] | (x[i+1] << 8) | (x[i+2] << 16) | (x[i+3] << 24);
 }
 
@@ -125,6 +130,7 @@ function load_littleendian(x, i) {
  * with above loading function.
  */
 function store_littleendian(x, i, u) {
+	"use strict";
 	  x[i] = u; u >>>= 8;
 	x[i+1] = u; u >>>= 8;
 	x[i+2] = u; u >>>= 8;
@@ -143,23 +149,40 @@ function store_littleendian(x, i, u) {
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function salsa20(outArr, inArr, k, c, arrFactory) {
+	"use strict";
 
-	var j0 = x0 = load_littleendian(c, 0)
-	,   j1 = x1 = load_littleendian(k, 0)
-	,   j2 = x2 = load_littleendian(k, 4)
-	,   j3 = x3 = load_littleendian(k, 8)
-	,   j4 = x4 = load_littleendian(k, 12)
-	,   j5 = x5 = load_littleendian(c, 4)
-	,   j6 = x6 = load_littleendian(inArr, 0)
-	,   j7 = x7 = load_littleendian(inArr, 4)
-	,   j8 = x8 = load_littleendian(inArr, 8)
-	,   j9 = x9 = load_littleendian(inArr, 12)
-	,  j10 = x10 = load_littleendian(c, 8)
-	,  j11 = x11 = load_littleendian(k, 16)
-	,  j12 = x12 = load_littleendian(k, 20)
-	,  j13 = x13 = load_littleendian(k, 24)
-	,  j14 = x14 = load_littleendian(k, 28)
-	,  j15 = x15 = load_littleendian(c, 12)
+	var x0 = load_littleendian(c, 0)
+	,   j0 = x0
+	,   x1 = load_littleendian(k, 0)
+	,   j1 = x1
+	,   x2 = load_littleendian(k, 4)
+	,   j2 = x2
+	,   x3 = load_littleendian(k, 8)
+	,   j3 = x3
+	,   x4 = load_littleendian(k, 12)
+	,   j4 = x4
+	,   x5 = load_littleendian(c, 4)
+	,   j5 = x5
+	,   x6 = load_littleendian(inArr, 0)
+	,   j6 = x6
+	,   x7 = load_littleendian(inArr, 4)
+	,   j7 = x7
+	,   x8 = load_littleendian(inArr, 8)
+	,   j8 = x8
+	,   x9 = load_littleendian(inArr, 12)
+	,   j9 = x9
+	,  x10 = load_littleendian(c, 8)
+	,  j10 = x10
+	,  x11 = load_littleendian(k, 16)
+	,  j11 = x11
+	,  x12 = load_littleendian(k, 20)
+	,  j12 = x12
+	,  x13 = load_littleendian(k, 24)
+	,  j13 = x13
+	,  x14 = load_littleendian(k, 28)
+	,  j14 = x14
+	,  x15 = load_littleendian(c, 12)
+	,  j15 = x15
 	, t = 0;
 	
 	for (var i=20; i>0; i-=2) {
@@ -277,6 +300,7 @@ function salsa20(outArr, inArr, k, c, arrFactory) {
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function hsalsa20(outArr, inArr, k, c, arrFactory) {
+	"use strict";
 
 	var x0 = load_littleendian(c, 0)
 	,   x1 = load_littleendian(k, 0)
@@ -293,7 +317,8 @@ function hsalsa20(outArr, inArr, k, c, arrFactory) {
 	,  x12 = load_littleendian(k, 20)
 	,  x13 = load_littleendian(k, 24)
 	,  x14 = load_littleendian(k, 28)
-	,  x15 = load_littleendian(c, 12);
+	,  x15 = load_littleendian(c, 12)
+	, t = 0;
 
 	for (var i=20; i>0; i-=2) {
 		t = ( x0+x12) & 0xffffffff;
@@ -391,6 +416,7 @@ var verify = require('../util/verify');
  * @param c is array of 17 uint32's.
  */
 function add(h, c) {
+	"use strict";
 	var u = 0;
 	for (var j= 0; j<17; j+=1) {
 		u += h[j] + c[j];
@@ -405,6 +431,7 @@ function add(h, c) {
  * @param h is array of 17 uint32's.
  */
 function squeeze(h) {
+	"use strict";
 	var u = 0;
 	for (var j=0; j<16; j+=1) {
 		u += h[j];
@@ -440,6 +467,7 @@ minusp.set([ 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252 ]);
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function freeze(h, arrFactory) {
+	"use strict";
 	var horig = arrFactory.getUint32Array(17);
 	horig.set(h);
 	add(h, minusp);
@@ -458,6 +486,7 @@ function freeze(h, arrFactory) {
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function mulmod(h, r, arrFactory) {
+	"use strict";
 	var hr = arrFactory.getUint32Array(17)
 	, u = 0;
 	for (var i=0; i<17; i+=1) {
@@ -485,6 +514,7 @@ function mulmod(h, r, arrFactory) {
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function crypto_onetimeauth(outArr, inArr, k, arrFactory) {
+	"use strict";
 	var r = arrFactory.getUint32Array(17)
 	, h = arrFactory.getUint32Array(17)
 	, c = arrFactory.getUint32Array(17)
@@ -546,6 +576,7 @@ function crypto_onetimeauth(outArr, inArr, k, arrFactory) {
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function crypto_onetimeauth_verify(h, inArr, k, arrFactory) {
+	"use strict";
 	var correct = arrFactory.getUint8Array(16);
 	crypto_onetimeauth(correct, inArr, k, arrFactory);
 	var areSame = verify.v16(h, correct);
@@ -573,6 +604,7 @@ var mult32 = require('../util/int32').mult;
  * @param b is Uint32Array, 32 items long.
  */
 function add(out, a, b){
+	"use strict";
 	var u = 0;
 	for (var j=0; j<31; j+=1) {
 		u += a[j] + b[j];
@@ -592,6 +624,7 @@ function add(out, a, b){
  * @param b is Uint32Array, 32 items long.
  */
 function sub(out, a, b) {
+	"use strict";
 	var u = 218;
 	for (var j=0; j<31; j+=1) {
 		u += a[j] + 65280 - b[j];
@@ -609,6 +642,7 @@ function sub(out, a, b) {
  * @param a is Uint32Array, 32 items long.
  */
 function squeeze(a) {
+	"use strict";
 	var u = 0;
 	for (var j=0; j<31; j+=1) {
 		u += a[j];
@@ -647,6 +681,7 @@ minusp.set([ 19, 0, 0, 0, 0, 0, 0, 0,
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function freeze(a, arrFactory) {
+	"use strict";
 	var aorig = arrFactory.getUint32Array(32);
 	aorig.set(a);
 	add(a,a,minusp);
@@ -665,6 +700,7 @@ function freeze(a, arrFactory) {
  * @param b is Uint32Array, 32 items long.
  */
 function mult(out, a, b) {
+	"use strict";
 	var u = 0;
 	for (var i=0; i<32; i+=1) {
 		u = 0;
@@ -687,6 +723,7 @@ function mult(out, a, b) {
  * @param a is Uint32Array, 32 items long.
  */
 function mult121665(out, a) {
+	"use strict";
 	var u = 0;
 	for (var j=0; j<31; j+=1) {
 		u += 121665 * a[j];	// safe multiplication, as 17+32=49 bits
@@ -716,6 +753,7 @@ function mult121665(out, a) {
  * @param a is Uint32Array, 32 items long.
  */
 function square(out, a) {
+	"use strict";
 	var u = 0;
 	for (var i=0; i<32; i+=1) {
 		u = 0;
@@ -749,6 +787,7 @@ function square(out, a) {
  * @param b is a number within Uint32 limits.
  */
 function select(p, q, r, s, b) {
+	"use strict";
 	b &= 0xffffffff;
 	var t = 0
 	, bminus1 = b - 1;
@@ -767,6 +806,8 @@ function select(p, q, r, s, b) {
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function mainloop(work, e, arrFactory) {
+	"use strict";
+	
 	var xzm1 = arrFactory.getUint32Array(64)
 	, xzm = arrFactory.getUint32Array(64)
 	, xzmb = arrFactory.getUint32Array(64)
@@ -840,6 +881,8 @@ function mainloop(work, e, arrFactory) {
  * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
  */
 function recip(out, z, arrFactory) {
+	"use strict";
+	
 	var z2 = arrFactory.getUint32Array(32)
 	, z9 = arrFactory.getUint32Array(32)
 	, z11 = arrFactory.getUint32Array(32)
@@ -916,6 +959,8 @@ function recip(out, z, arrFactory) {
  * It may be undefined, in which case an internally created one is used.
  */
 function crypto_scalarmult(q, n, p, arrFactory) {
+	"use strict";
+	
 	if (!arrFactory) { arrFactory = new ArraysFactory(); }
 	var work = arrFactory.getUint32Array(96)
 	, e = arrFactory.getUint32Array(32);
@@ -954,6 +999,7 @@ base[0] = 9;
  * It may be undefined, in which case an internally created one is used.
  */
 function crypto_scalarmult_base(q, n, arrFactory) {
+	"use strict";
 	crypto_scalarmult(q, n, base, arrFactory);
 }
 
@@ -976,6 +1022,7 @@ var onetimeauth_poly1305_verify = onetimeauth.poly1305_verify;
 var ArraysFactory = require('../util/arrays');
 
 function checkPackArgs(m, n, k) {
+	"use strict";
 	if (m.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Message array m must be Uint8Array."); }
 	if (m.length === 0) { throw new Error("Message array should have at least one byte."); }
 	if (n.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Nonce array n must be Uint8Array."); }
@@ -1002,6 +1049,8 @@ function checkPackArgs(m, n, k) {
  * It may be undefined, in which case an internally created one is used.
  */
 function xsalsa20poly1305_pad_and_pack(c, m, n, k, arrFactory) {
+	"use strict";
+	
 	if (c.length < 32+m.length) { throw new Error("Given array c is too short for output."); }
 	if (!arrFactory) { arrFactory = new ArraysFactory(); }
 	
@@ -1031,6 +1080,7 @@ function xsalsa20poly1305_pad_and_pack(c, m, n, k, arrFactory) {
  * a view on array, starting with non-zero part.
  */
 function pack(m, n, k, arrFactory) {
+	"use strict";
 	checkPackArgs(m, n, k);
 	var c = new Uint8Array(m.length+32);
 	xsalsa20poly1305_pad_and_pack(c, m, n, k, arrFactory);
@@ -1048,6 +1098,7 @@ function pack(m, n, k, arrFactory) {
  * It may be undefined, in which case an internally created one is used.
  */
 function packIntoArrWithNonce(c, m, n, k, arrFactory) {
+	"use strict";
 	checkPackArgs(m, n, k);
 	if (c.length < 40+m.length) { throw new Error(
 			"Array c, for packing nonce and cipher, is too short."); }
@@ -1070,6 +1121,8 @@ function packIntoArrWithNonce(c, m, n, k, arrFactory) {
  * Array is a view of buffer, which has 32 zeros preceding message bytes.
  */
 function xsalsa20poly1305_pad_open_trim(c, n, k, arrFactory) {
+	"use strict";
+	
 	if (c.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Cipher array c must be Uint8Array."); }
 	if (c.length < 17) { throw new Error(
 			"Cipher array c should have at least 17 elements (bytes) in it, but is only "+
@@ -1119,6 +1172,7 @@ function xsalsa20poly1305_pad_open_trim(c, n, k, arrFactory) {
  * Array is a view of buffer, which has 32 zeros preceding message bytes.
  */
 function openArrWithNonce(c, k, arrFactory) {
+	"use strict";
 	if (c.length < 41) { throw new Error("Array c with nonce and cipher should have at "+
 			"least 41 elements (bytes) in it, but is only "+c.length+" elements long."); }
 	var n = c.subarray(0, 24);
@@ -1150,6 +1204,7 @@ var core = require('./core');
  */
 var sigma = new Uint8Array(16);
 (function () {
+	"use strict";
 	var str = "expand 32-byte k";
 	for (var i=0; i<16; i+=1) {
 		sigma[i] = str.charCodeAt(i);
@@ -1165,6 +1220,8 @@ var sigma = new Uint8Array(16);
  * It may be undefined, in which case an internally created one is used.
  */
 function stream_salsa20(c, n, k, arrFactory) {
+	"use strict";
+	
 	if (!arrFactory) { arrFactory = new ArraysFactory(); }
 	var inArr = arrFactory.getUint8Array(16)
 	, u = 0;
@@ -1220,6 +1277,8 @@ function stream_salsa20(c, n, k, arrFactory) {
  * It may be undefined, in which case an internally created one is used.
  */
 function stream_salsa20_xor(c, m, mPadLen, n, k, arrFactory) {
+	"use strict";
+	
 	if (!arrFactory) { arrFactory = new ArraysFactory(); }
 	var inArr = arrFactory.getUint8Array(16)
 	, block = arrFactory.getUint8Array(64)
@@ -1243,7 +1302,8 @@ function stream_salsa20_xor(c, m, mPadLen, n, k, arrFactory) {
 		return;
 	}
 	
-	var cp = mp = 0;
+	var cp = 0
+	, mp = 0;
 	{ // first loop with pad
 		core.salsa20(block,inArr,k,sigma,arrFactory);
 		for (var i=0; i<mPadLen; i+=1) {
@@ -1304,6 +1364,8 @@ function stream_salsa20_xor(c, m, mPadLen, n, k, arrFactory) {
  * It may be undefined, in which case an internally created one is used.
  */
 function stream_xsalsa20(c, n, k, arrFactory) {
+	"use strict";
+	
 	if (!arrFactory) {
 		arrFactory = new ArraysFactory();
 	}
@@ -1329,6 +1391,8 @@ function stream_xsalsa20(c, n, k, arrFactory) {
  * It may be undefined, in which case an internally created one is used.
  */
 function stream_xsalsa20_xor(c, m, mPadLen, n, k, arrFactory) {
+	"use strict";
+	
 	if (!arrFactory) { arrFactory = new ArraysFactory(); }
 	var subkey = arrFactory.getUint8Array(32)
 	, n_16 = n.subarray(16, 24);
@@ -1444,11 +1508,10 @@ function advanceNonceEvenly(n) {
  * @param nextNonce is nonce, which should be used for the very first packing.
  * All further packing will be done with new nonce, as it is automatically evenly advanced.
  * Note that nextNonce will be copied.
- * @param isFormatWN
  * @return a frozen object with pack & open functions, and destroy
  * It is NaCl's secret box for a given key, with automatically evenly advancing nonce.
  */
-function makeSecretBoxEncryptor(key, nextNonce, isFormatWN) {
+function makeSecretBoxEncryptor(key, nextNonce) {
 	if (nextNonce.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Nonce array nextNonce must be Uint8Array."); }
 	if (nextNonce.length !== 24) { throw new Error(
 			"Nonce array nextNonce should have 24 elements (bytes) in it, but it is "+
@@ -1463,41 +1526,22 @@ function makeSecretBoxEncryptor(key, nextNonce, isFormatWN) {
 	, pack, open;
 	key = new Uint8Array(key);
 	nextNonce = new Uint8Array(nextNonce);
-	
-	// set functions according to preference
-	if (isFormatWN) {
-		pack = function(m) {
-			if (!key) { throw new Error(
-					"This encryptor cannot be used, as it had already been destroyed."); }
-			var c = formatWN.pack(m, nextNonce, key, arrFactory);
-			arrFactory.wipeRecycled();
-			advanceNonceEvenly(nextNonce);
-			return c;
-		};
-		open = function(c) {
-			if (!key) { throw new Error(
-					"This encryptor cannot be used, as it had already been destroyed."); }
-			var m = formatWN.open(c, key, arrFactory);
-			arrFactory.wipeRecycled();
-			return m;
-		};
-	} else {
-		pack = function(m) {
-			if (!key) { throw new Error(
-					"This encryptor cannot be used, as it had already been destroyed."); }
-			var c = secret_box.pack(m, nextNonce, key, arrFactory);
-			arrFactory.wipeRecycled();
-			advanceNonceEvenly(nextNonce);
-			return c;
-		};
-		open = function(c) {
-			if (!key) { throw new Error(
-					"This encryptor cannot be used, as it had already been destroyed."); }
-			var m = secret_box.open(c, key, arrFactory);
-			arrFactory.wipeRecycled();
-			return m;
-		};
-	}
+
+	pack = function(m) {
+		if (!key) { throw new Error(
+				"This encryptor cannot be used, as it had already been destroyed."); }
+		var c = formatWN.pack(m, nextNonce, key, arrFactory);
+		arrFactory.wipeRecycled();
+		advanceNonceEvenly(nextNonce);
+		return c;
+	};
+	open = function(c) {
+		if (!key) { throw new Error(
+				"This encryptor cannot be used, as it had already been destroyed."); }
+		var m = formatWN.open(c, key, arrFactory);
+		arrFactory.wipeRecycled();
+		return m;
+	};
 	destroy = function() {
 		if (!key) { return; }
 		TypedArraysFactory.prototype.wipe(key, nextNonce);
@@ -1564,6 +1608,7 @@ for (var i=0; i<START_STRING.length; i+=1) {
  * Reader or Writer object.
  */
 function wipeFileKey() {
+	"use strict";
 	if (this.fileKey) {
 		for (var i=0; i<32; i+=1) { this.fileKey[i] = 0; }
 		this.fileKey = null;
@@ -1578,6 +1623,7 @@ function wipeFileKey() {
  * @returns a length of data encrypted in the segment. 
  */
 function dataLenInSegment(segLen, isFirstSegment) {
+	"use strict";
 	return segLen - SEGMENT_CRYPTO_HEADER_LEN - (isFirstSegment ? FILE_HEADER_LEN : 0);
 }
 
@@ -1597,6 +1643,7 @@ function posInFileOf(segLen, dataPos) {
 }
 
 function posInDataOf(segLen, segInd, byteInd) {
+	"use strict";
 	var pos = 0;
 	if (segInd > 0) {
 		pos += segInd*(segLen - SEGMENT_CRYPTO_HEADER_LEN) - FILE_HEADER_LEN;
@@ -1612,6 +1659,7 @@ function posInDataOf(segLen, segInd, byteInd) {
  * byte array.
  */
 function storeUint32(x, i, u) {
+	"use strict";
 	x[i] = u; u >>>= 8;
 	x[i+1] = u; u >>>= 8;
 	x[i+2] = u; u >>>= 8;
@@ -1624,6 +1672,7 @@ function storeUint32(x, i, u) {
  * @returns number within uint32 limits, loaded from a given array.
  */
 function loadUint32(x, i) {
+	"use strict";
 	return x[i] | (x[i+1] << 8) | (x[i+2] << 16) | (x[i+3] << 24);
 }
 
@@ -1670,6 +1719,7 @@ Writer.prototype.wipeFileKey = wipeFileKey;
  * @param seg is Uint8Array for segment bytes
  */
 function writeFileHeader(seg) {
+	"use strict";
 	// write file starting string
 	seg.set(FILE_START);
 	// write key envelope
@@ -1806,6 +1856,7 @@ module.exports = {
  * @returns
  */
 function NumericArrPool(numOfElemsInObj, constructorFunc) {
+	"use strict";
 	this.constructor = constructorFunc;
 	this.numOfElemsInObj = numOfElemsInObj;
 	this.pool = new Array(16);
@@ -1822,6 +1873,7 @@ function NumericArrPool(numOfElemsInObj, constructorFunc) {
  * must be performed explicitly.
  */
 NumericArrPool.prototype.get = function() {
+	"use strict";
 	var arr;
 	if (this.poolIndex < 0) {
 		arr = new this.constructor(this.numOfElemsInObj);
@@ -1838,17 +1890,20 @@ NumericArrPool.prototype.get = function() {
  * @param arr
  */
 NumericArrPool.prototype.recycle = function(arr) {
+	"use strict";
 	this.poolIndex += 1;
 	this.pool[this.poolIndex] = arr;
 };
 
 function TypedArraysFactory() {
+	"use strict";
 	this.uint8s = { constructor: Uint8Array };
 	this.uint32s = { constructor: Uint32Array };
 	Object.freeze(this);
 }
 
 function clearPool(p) {
+	"use strict";
 	for (var fieldName in p) {
 		if (fieldName !== "constructor") {
 			delete p[fieldName];
@@ -1861,11 +1916,13 @@ function clearPool(p) {
  * even if reference to this factory is hanging somewhere.
  */
 TypedArraysFactory.prototype.clear = function() {
+	"use strict";
 	clearPool(this.uint8s);
 	clearPool(this.uint32s);
 };
 
 function get(typedPools, len) {
+	"use strict";
 	var pool = typedPools[len];
 	if (!pool) {
 		pool = new NumericArrPool(len, typedPools.constructor);
@@ -1875,6 +1932,7 @@ function get(typedPools, len) {
 }
 
 function recycle(typedPools, arr) {
+	"use strict";
 	var pool = typedPools[arr.length];
 	if (!pool) {
 		pool = new NumericArrPool(arr.length, typedPools.constructor);
@@ -1892,6 +1950,7 @@ function recycle(typedPools, arr) {
  * all set to zero (either by construction, or by auto cleanup of recycled arrays).
  */
 TypedArraysFactory.prototype.getUint8Array = function(len) {
+	"use strict";
 	return get(this.uint8s, len);
 };
 
@@ -1904,6 +1963,7 @@ TypedArraysFactory.prototype.getUint8Array = function(len) {
  * all set to zero (either by construction, or by auto cleanup of recycled arrays).
  */
 TypedArraysFactory.prototype.getUint32Array = function(len) {
+	"use strict";
 	return get(this.uint32s, len);
 };
 
@@ -1917,6 +1977,7 @@ TypedArraysFactory.prototype.getUint32Array = function(len) {
  * use wipe() method.
  */
 TypedArraysFactory.prototype.recycle = function() {
+	"use strict";
 	var arr;
 	for (var i=0; i<arguments.length; i+=1) {
 		arr = arguments[i];
@@ -1945,6 +2006,7 @@ TypedArraysFactory.prototype.recycle = function() {
  * recycled due to their odd and/or huge size, as it makes pooling inefficient.
  */
 TypedArraysFactory.prototype.wipe = function() {
+	"use strict";
 	var arr;
 	for (var i=0; i<arguments.length; i+=1) {
 		arr = arguments[i];
@@ -1954,6 +2016,7 @@ TypedArraysFactory.prototype.wipe = function() {
 };
 
 function wipePool(p) {
+	"use strict";
 	var poolArr, uintArr;
 	for (var fieldName in p) {
 		if (fieldName === "constructor") { continue; }
@@ -1972,6 +2035,7 @@ function wipePool(p) {
  * This wipes (sets to zeros) all arrays that are located in pools
  */
 TypedArraysFactory.prototype.wipeRecycled = function() {
+	"use strict";
 	wipePool(this.uint8s);
 	wipePool(this.uint32s);
 };
@@ -2005,6 +2069,7 @@ module.exports = TypedArraysFactory;
  * @returns number, which is a result of multiplication modulo 32 bits.
  */
 function mult(a,b) {
+	"use strict";
 	var r = a*(b >>> 16);
 	r &= 0xffffffff;
 	r *= 0x10000;
@@ -2020,6 +2085,7 @@ function mult(a,b) {
  * @returns number, which is a result of multiplication modulo 32 bits.
  */
 function multChecked(a,b) {
+	"use strict";
 	a &= 0xffffffff;
 	b &= 0xffffffff;
 	var r = a*(b >>> 16);
@@ -2051,6 +2117,7 @@ module.exports = {
  *          and -1 (truethy value), for different elements.
  */
 function verify(x, y, len) {
+	"use strict";
 	if ('number' !== typeof len) { throw new Error("Function is not given proper length argument"); }
 	var differentbits = 0;
 	for (var i=0; i<len; i+=1) {
@@ -2068,6 +2135,7 @@ function verify(x, y, len) {
  *          and -1 (truethy value), for different elements.
  */
 function verify16(x, y) {
+	"use strict";
 	return verify(x, y, 16);
 }
 
@@ -2080,6 +2148,7 @@ function verify16(x, y) {
  *          and -1 (truethy value), for different elements.
  */
 function verify32(x, y) {
+	"use strict";
 	return verify(x, y, 32);
 }
 
