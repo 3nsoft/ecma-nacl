@@ -1,24 +1,24 @@
 
-var boxes = require('../../lib/ecma-nacl');
-var xsp = boxes.fileXSP;
-var compareVectors = boxes.compareVectors;
+/**
+ * Testing xsp file format functions.
+ */
+
+var nacl = require('../../lib/ecma-nacl');
+var xsp = nacl.fileXSP;
+var compareVectors = nacl.compareVectors;
 var randomBytes = require('crypto').randomBytes;
 var assert = require('assert');
 
 function getRandom(numOfBytes) {
 	"use strict";
-	var buf = randomBytes(numOfBytes);
-	var arr = new Uint8Array(numOfBytes);
-	for (var i=0; i<numOfBytes; i+=1) {
-		arr[i] = buf[i];
-	}
-	return arr;
+	return new Uint8Array(randomBytes(numOfBytes));
 }
 
 function testXSPFormatPackAndOpen(dataLen, segSize) {
 	"use strict";
 
-	console.log("Test encrypting and packing "+dataLen+" bytes of data into xsp file with segment size "+segSize);
+	console.log("Test encrypting and packing "+dataLen+
+			" bytes of data into xsp file with segment size "+segSize);
 
 	var data = getRandom(dataLen)
 	, fileKey = getRandom(32)
@@ -26,24 +26,33 @@ function testXSPFormatPackAndOpen(dataLen, segSize) {
 	, nonceToEncFileKey = getRandom(24)
 	, fileSegments = [];
 
-	// initialize writer
-	var writer = new xsp.Writer(segSize, new Uint8Array(fileKey), nonceToEncFileKey, masterKey);
+	// initialize encryptor
+	var enc = xsp.makeNewFileEncryptor(
+			segSize, new Uint8Array(fileKey), nonceToEncFileKey, masterKey)
+	, nonce = getRandom(24);
 
 	// pack segments
 	var offset = 0
-	, seg;
+	, encRes;
 	while (offset < data.length) {
-		seg = writer.packSegment(data, offset, (offset === 0), getRandom(24));
-		fileSegments.push(seg);
-		offset += xsp.dataLenInSegment(seg.length, (offset === 0));
+		if (offset === 0) {
+			encRes = enc.packFirstSegment(data, nonce);
+		} else {
+			encRes = enc.packSegment(data.subarray(offset), nonce);
+		}
+		nacl.advanceNonceOddly(nonce);
+		offset += encRes.dataLen;
+		fileSegments.push(encRes.seg);
 	}
 	
 	// wipe key bytes from memory
-	writer.wipeFileKey();
+	enc.destroy();
 
-	// mix segments into one array in order to loose implicit info about segment boundaries
+	// put segments into one array, like they will sit in one xsp file
 	offset = 0;
-	for (var i=0; i<fileSegments.length; i+=1) { offset += fileSegments[i].length; }
+	for (var i=0; i<fileSegments.length; i+=1) {
+		offset += fileSegments[i].length;
+	}
 	var completeFile = new Uint8Array(offset);
 	offset = 0;
 	for (var i=0; i<fileSegments.length; i+=1) {
@@ -51,25 +60,26 @@ function testXSPFormatPackAndOpen(dataLen, segSize) {
 		completeFile.set(fileSegments[i], offset);
 	}
 
-	// initialize reader
-	var reader = new xsp.Reader(completeFile.subarray(0, xsp.FILE_HEADER_LEN), masterKey)
+	// initialize encryptor
+	var firstSegHeader = completeFile.subarray(
+			0, xsp.FIRST_SEGMENT_HEADERS_LEN)
 	, dataParts = [];
+	enc = new xsp.makeExistingFileEncryptor(firstSegHeader, masterKey);
+	
+	assert.strictEqual(enc.commonSegSize(), segSize,
+			"Encryptor recreated incorrect common segment length");
 
-	assert.ok(compareVectors(reader.fileKey, fileKey), "Reader recreated incorrect file key");
-	assert.strictEqual(reader.segSize, segSize, "Reader recreated incorrect segment length");
-
-	// read other segments
-	var dataPiece;
+	// read data
+	var decRes;
 	offset = 0;
 	while (offset < completeFile.length) {
-		dataPiece = reader.openSegment(
-				completeFile.subarray(offset, offset+reader.segSize), (offset === 0));
-		dataParts.push(dataPiece);
-		offset += reader.segSize;
+		decRes = enc.openSegment(completeFile.subarray(offset));
+		offset += decRes.segLen;
+		dataParts.push(decRes.data);
 	}
 	
 	// wipe key bytes from memory
-	reader.wipeFileKey();
+	enc.destroy();
 
 	// reconstruct and compare complete data
 	offset = 0;
@@ -80,7 +90,8 @@ function testXSPFormatPackAndOpen(dataLen, segSize) {
 		completeReconstrData.set(dataParts[i], offset);
 		offset += dataParts[i].length;
 	}
-	assert.ok(compareVectors(completeReconstrData, data), "Reconstructed data is not the same as original");
+	assert.ok(compareVectors(completeReconstrData, data),
+			"Reconstructed data is not the same as original");
 
 	console.log("PASS.\n");
 }
@@ -90,67 +101,3 @@ testXSPFormatPackAndOpen(16, 16*1024);
 testXSPFormatPackAndOpen(16*1024-90, 16*1024);
 testXSPFormatPackAndOpen(16*1024, 16*1024);
 testXSPFormatPackAndOpen(3*16*1024, 16*1024);
-
-function testLocatingOfBytesInSegments(dataLen, segSize, checksPerSeg) {
-	"use strict";
-
-	console.log("Test locating random bytes in xsp file, containing "+dataLen+" bytes with segement size "+segSize);
-	
-	var data = getRandom(dataLen)
-	, fileKey = getRandom(32)
-	, masterKey = getRandom(32)
-	, nonceToEncFileKey = getRandom(24)
-	, fileSegments = [];
-
-	// initialize writer
-	var writer = new xsp.Writer(segSize, new Uint8Array(fileKey), nonceToEncFileKey, masterKey);
-
-	// pack segments
-	var offset = 0
-	, seg;
-	while (offset < data.length) {
-		seg = writer.packSegment(data, offset, (offset === 0), getRandom(24));
-		fileSegments.push(seg);
-		offset += xsp.dataLenInSegment(seg.length, (offset === 0));
-	}
-	
-	// wipe key bytes from memory
-	writer.wipeFileKey();
-
-	// initialize reader
-	var reader = new xsp.Reader(fileSegments[0].subarray(0, xsp.FILE_HEADER_LEN), masterKey);
-	
-	// open segments
-	for (var i=0; i<fileSegments.length; i+=1) {
-		fileSegments[i] = reader.openSegment(fileSegments[i], (i === 0));
-	}
-	
-	// check referencing of same bytes in data array and opened file segments
-	var posInData, posInSegs, byteInds;
-	for (var i=0; i<fileSegments.length; i+=1) {
-		byteInds = [ 0 ];
-		for (var j=0; j<checksPerSeg; j+=1) {
-			byteInds.push(Math.floor(
-					fileSegments[i].length * Math.random()));
-		}
-		for (var j=0; j<byteInds.length; j+=1) {
-			posInData = xsp.posInDataOf(reader.segSize, i, byteInds[j]);
-			assert.strictEqual(data[posInData], fileSegments[i][byteInds[j]],
-					"Position in segment {s:"+i+",b:"+byteInds[j]+"} is calculated to be " +
-					"position "+posInData+", but bytes do not match.");
-			posInSegs = xsp.posInFileOf(reader.segSize, posInData);
-			assert.ok((posInSegs.s === i) && (posInSegs.b === byteInds[j]),
-					"Data position "+posInData+" got translated into {s:"+
-					posInSegs.s+",b:"+posInSegs.b+"}, instead of {s:"+i+",b:"+byteInds[j]+"}");
-		}
-	}
-	
-	// wipe key bytes from memory
-	reader.wipeFileKey();
-
-	console.log("PASS.\n");
-}
-
-testLocatingOfBytesInSegments(1, 16*1024, 1);
-testLocatingOfBytesInSegments(16, 16*1024, 5);
-testLocatingOfBytesInSegments(3*16*1024, 16*1024, 10);

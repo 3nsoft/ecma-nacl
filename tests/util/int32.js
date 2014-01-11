@@ -2,7 +2,7 @@
  * Testing lib/int32 module
  */
 
-var mult32 = require('../lib/util/int32').mult;
+var mult32 = require('../../lib/util/int32').mult;
 
 var a = 0xfffffff1;
 var c = 0xffff1;

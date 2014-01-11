@@ -588,7 +588,7 @@ module.exports = {
 		poly1305: crypto_onetimeauth,
 		poly1305_verify: crypto_onetimeauth_verify
 };
-},{"../util/int32":11,"../util/verify":12}],4:[function(require,module,exports){
+},{"../util/int32":11,"../util/verify":13}],4:[function(require,module,exports){
 /* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -1424,6 +1424,7 @@ var secret_box = require('./boxes/secret_box')
 , box = require('./boxes/box')
 , TypedArraysFactory = require('./util/arrays')
 , verify = require('./util/verify').verify
+, nonceMod = require('./util/nonce')
 , fileXSP = require('./file/xsp');
 
 /**
@@ -1433,6 +1434,7 @@ var secret_box = require('./boxes/secret_box')
  * and false, otherwise.
  */
 function compareVectors(x, y) {
+	"use strict";
 	if (x.length !== y.length) { return false; }
 	return verify(x, y, x.length);
 }
@@ -1447,6 +1449,7 @@ function compareVectors(x, y) {
  * Length of the returned array is 40 bytes greater than that of a message.
  */
 function packFormatWN(m, n, k, arrFactory) {
+	"use strict";
 	var c = new Uint8Array(40+m.length);
 	secret_box.packIntoArrWithNonce(c, m, n, k, arrFactory);
 	return c;
@@ -1457,6 +1460,7 @@ function packFormatWN(m, n, k, arrFactory) {
  * @returns Uint8Array, which is a copy of 24-byte nonce from a given array c
  */
 function copyNonceFrom(c) {
+	"use strict";
 	if (c.length < 41) { throw new Error("Array c with nonce and cipher should have at "+
 			"least 41 elements (bytes) in it, but is only "+c.length+" elements long."); }
 	return new Uint8Array(c.subarray(0, 24));
@@ -1471,37 +1475,6 @@ Object.freeze(formatWN);
 
 /**
  * 
- * @param n is Uint8Array, 24 bytes long nonce that will be changed in-place.
- * @param delta is a number, by which 8-byte numbers, constituting given 24-bytes nonce,
- * are advanced.
- */
-function advanceNonce(n, delta) {
-	if (n.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Nonce array n must be Uint8Array."); }
-	if (n.length !== 24) { throw new Error(
-			"Nonce array n should have 24 elements (bytes) in it, but it is "+
-			n.length+" elements long."); }
-	var t;
-	for (var i=0; i<3; i+=1) {
-		t = delta;
-		for (var j=0; j<8; j+=1) {
-			t += n[j+i*8];
-			n[j+i*8] = t & 0xff;
-			t >>>= 8;
-			if (t === 0) { break; }
-		}
-	}
-}
-
-function advanceNonceOddly(n) {
-	advanceNonce(n, 1);
-}
-
-function advanceNonceEvenly(n) {
-	advanceNonce(n, 2);
-}
-
-/**
- * 
  * @param key for new encryptor.
  * Note that key will be copied, thus, if given array shall never be used anywhere, it should
  * be wiped after this call.
@@ -1512,6 +1485,7 @@ function advanceNonceEvenly(n) {
  * It is NaCl's secret box for a given key, with automatically evenly advancing nonce.
  */
 function makeSecretBoxEncryptor(key, nextNonce) {
+	"use strict";
 	if (nextNonce.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Nonce array nextNonce must be Uint8Array."); }
 	if (nextNonce.length !== 24) { throw new Error(
 			"Nonce array nextNonce should have 24 elements (bytes) in it, but it is "+
@@ -1523,24 +1497,29 @@ function makeSecretBoxEncryptor(key, nextNonce) {
 	
 	// set variable in the closure
 	var arrFactory = new TypedArraysFactory()
-	, pack, open;
+	, pack, open, destroy;
 	key = new Uint8Array(key);
 	nextNonce = new Uint8Array(nextNonce);
 
 	pack = function(m) {
-		if (!key) { throw new Error(
-				"This encryptor cannot be used, as it had already been destroyed."); }
-		var c = formatWN.pack(m, nextNonce, key, arrFactory);
-		arrFactory.wipeRecycled();
-		advanceNonceEvenly(nextNonce);
-		return c;
+		try {
+			if (!key) { throw new Error("This encryptor cannot be used, " +
+			"as it had already been destroyed."); }
+			var c = formatWN.pack(m, nextNonce, key, arrFactory);
+			nonceMod.advanceEvenly(nextNonce);
+			return c;
+		} finally {
+			arrFactory.wipeRecycled();
+		}
 	};
 	open = function(c) {
-		if (!key) { throw new Error(
-				"This encryptor cannot be used, as it had already been destroyed."); }
-		var m = formatWN.open(c, key, arrFactory);
-		arrFactory.wipeRecycled();
-		return m;
+		try {
+			if (!key) { throw new Error("This encryptor cannot be used, " +
+					"as it had already been destroyed."); }
+			return formatWN.open(c, key, arrFactory);
+		} finally {
+			arrFactory.wipeRecycled();
+		}
 	};
 	destroy = function() {
 		if (!key) { return; }
@@ -1578,78 +1557,54 @@ module.exports = {
 		TypedArraysFactory: TypedArraysFactory,
 		compareVectors: compareVectors,
 		wipeArrays: TypedArraysFactory.prototype.wipe,
-		advanceNonceOddly: advanceNonceOddly,
-		advanceNonceEvenly: advanceNonceEvenly,
+		advanceNonceOddly: nonceMod.advanceOddly,
+		advanceNonceEvenly: nonceMod.advanceEvenly,
 		makeSecretBoxEncryptor: makeSecretBoxEncryptor
 };
 Object.freeze(module.exports);
 
-},{"./boxes/box":1,"./boxes/secret_box":5,"./file/xsp":9,"./util/arrays":10,"./util/verify":12}],9:[function(require,module,exports){
+},{"./boxes/box":1,"./boxes/secret_box":5,"./file/xsp":9,"./util/arrays":10,"./util/nonce":12,"./util/verify":13}],9:[function(require,module,exports){
 /* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var sbox = require('../boxes/secret_box');
+var sbox = require('../boxes/secret_box')
+, TypedArraysFactory = require('../util/arrays')
+, areBytesSame = require('../util/verify').verify;
 
+/**
+ * Minimum and maximum limits for segment size guaranty, that when
+ * segment size is loaded with function provided here into 4 bytes, first
+ * two zero bytes shall always be different from starting string, allowing
+ * for distinguishing the first segment from all others.
+ */
 var MIN_SEGMENT_SIZE = 0xff
-, MAX_SEGMENT_SIZE = 0xffffffff
+, MAX_SEGMENT_SIZE = 0xffffff
 , START_STRING = "xsp"
-, SEGMENT_CRYPTO_HEADER_LEN = 40;	// non-message initial bytes when packing cipher with nonce
-var FILE_HEADER_LEN = START_STRING.length + 72 + 4
+/**
+ * Segment non-message header contains:
+ *  - 4 bytes with total segment length
+ *  - 40 bytes of with-nonce pack (24 nonce bytes, followed by 16 poly bytes)
+ */
+, SEGMENT_HEADER_LEN = 44
+/**
+ * File header contains:
+ *  - bytes with a start string (3 for 'xsp' string)
+ *  - 72 bytes of file key encrypted into with-nonce form (40+32=72)
+ *  - 4 bytes with a normal total segment size (the actual segment
+ *    size can be smaller, but not bigger than this value) 
+ */
+, FILE_HEADER_LEN = START_STRING.length + 72 + 4
+/**
+ * First segment contains:
+ *  - file header bytes
+ *  - segment header bytes
+ */
+, FIRST_SEGMENT_HEADERS_LEN = SEGMENT_HEADER_LEN + FILE_HEADER_LEN
 , FILE_START = new Uint8Array(START_STRING.length);
 for (var i=0; i<START_STRING.length; i+=1) {
-	FILE_START[i] = START_STRING.charAt(i);
-}
-
-/**
- * This function wipes the key array, before dropping it.
- * This function manipulates "this", therefore, it should be called always either on
- * Reader or Writer object.
- */
-function wipeFileKey() {
-	"use strict";
-	if (this.fileKey) {
-		for (var i=0; i<32; i+=1) { this.fileKey[i] = 0; }
-		this.fileKey = null;
-	}
-}
-
-/**
- * @param segLen is an actual length of a segment, for which we want to find length of data,
- * encrypted in the segment.
- * @param isFirstSegment is a boolean flag telling, if given length is for first segment (true value),
- * or not (false value).
- * @returns a length of data encrypted in the segment. 
- */
-function dataLenInSegment(segLen, isFirstSegment) {
-	"use strict";
-	return segLen - SEGMENT_CRYPTO_HEADER_LEN - (isFirstSegment ? FILE_HEADER_LEN : 0);
-}
-
-function posInFileOf(segLen, dataPos) {
-	"use strict";
-	var segInd, byteInd;
-	segInd = Math.floor(dataPos / (segLen-SEGMENT_CRYPTO_HEADER_LEN));
-	byteInd = dataPos - segInd*(segLen-SEGMENT_CRYPTO_HEADER_LEN) + ((segInd>0) ? FILE_HEADER_LEN : 0);
-	if(byteInd >= dataLenInSegment(segLen, (segInd === 0))) {
-		byteInd -= dataLenInSegment(segLen, (segInd === 0));
-		segInd += 1;
-	}
-	return {
-		s: segInd,
-		b: byteInd
-	};
-}
-
-function posInDataOf(segLen, segInd, byteInd) {
-	"use strict";
-	var pos = 0;
-	if (segInd > 0) {
-		pos += segInd*(segLen - SEGMENT_CRYPTO_HEADER_LEN) - FILE_HEADER_LEN;
-	}
-	pos += byteInd;
-	return pos;
+	FILE_START[i] = START_STRING.charCodeAt(i);
 }
 
 /**
@@ -1660,10 +1615,10 @@ function posInDataOf(segLen, segInd, byteInd) {
  */
 function storeUint32(x, i, u) {
 	"use strict";
-	x[i] = u; u >>>= 8;
-	x[i+1] = u; u >>>= 8;
+	x[i+3] = u; u >>>= 8;
 	x[i+2] = u; u >>>= 8;
-	x[i+3] = u;
+	x[i+1] = u; u >>>= 8;
+	x[i] = u;
 }
 
 /**
@@ -1673,171 +1628,295 @@ function storeUint32(x, i, u) {
  */
 function loadUint32(x, i) {
 	"use strict";
-	return x[i] | (x[i+1] << 8) | (x[i+2] << 16) | (x[i+3] << 24);
+	return (x[i] << 24) | (x[i+1] << 16) | (x[i+2] << 8) | x[i+3];
 }
 
 /**
- * This is a constructor function for xsp file writer.
- * Writer encrypts and packs data into segments, according to set maximum segment size.
- * Note that this object does not assume where file segments should go (file, network, or db),
- * and, therefore, it is an application that should keep track of data, order of segments, and
- * where these are destined.  
- * @param segSize is a length of a complete file segment.
- * Only the last segment of xsp file may be shorter than this length.
- * Note that data length within the segment is always a little shorter than segment's length,
- * as crypto parameters and, in first segment, file parameters are preceding encrypted data bytes.
+ * This throws up if given segment size is not ok.
+ * @param segSize
+ */
+function validateSegSize(segSize) {
+	"use strict";
+	if (('number' !== typeof segSize) || ((segSize % 1) !== 0) ||
+			(segSize < MIN_SEGMENT_SIZE) || (segSize > MAX_SEGMENT_SIZE)) {
+		throw new TypeError("Given segment length parameter must be an " +
+				"integer between "+MIN_SEGMENT_SIZE+" and "+MAX_SEGMENT_SIZE);
+	}
+}
+
+/**
+ * This function writes file header at the start of the given byte array.
+ * @param seg is Uint8Array for segment bytes
+ * @param fileKeyEnvelope
+ * @param maxSegSize
+ */
+function writeFileHeader(seg, fileKeyEnvelope, maxSegSize) {
+	"use strict";
+	// write file starting string
+	seg.set(FILE_START);
+	// write key envelope
+	seg.set(fileKeyEnvelope, FILE_START.length);
+	// write max segment length
+	storeUint32(seg, FILE_HEADER_LEN-4, maxSegSize);
+}
+
+/**
+ * @param data is Uint8Array with bytes that need to be packed into xsp file.
+ * @param fileKeyEnvelope is Uint8Array for the first segment, and is null,
+ * for all others.
+ * @param maxSegSize
+ * @param fileKey
+ * @param nonce
+ * @param arrFactory
+ * @return an object with the following fields:
+ *  a) seg is an Uint8Array xsp file segment's bytes;
+ *  b) dataLen is a number of data bytes that were packed into this segment.
+ */
+function packSegment(data, fileKeyEnvelope, maxSegSize,
+		fileKey, nonce, arrFactory) {
+	"use strict";
+	if (!fileKey) { throw new Error(
+			"This encryptor cannot be used, as file key has been wiped."); }
+	if (data.length <= 0) { throw new Error("There are no bytes to encode."); }
+	var headerLen = (fileKeyEnvelope ?
+			FIRST_SEGMENT_HEADERS_LEN : SEGMENT_HEADER_LEN)
+	, dataLen = Math.min(maxSegSize - headerLen, data.length)
+	// make a segment array
+	, seg = new Uint8Array(headerLen + dataLen)
+	, outArr;
+	// shorten data to those bytes that will be encrypted into the segment
+	data = ((dataLen < data.length) ? data.subarray(0, dataLen) : data);
+	if (fileKeyEnvelope) {
+		writeFileHeader(seg, fileKeyEnvelope, maxSegSize);
+		outArr = seg.subarray(FILE_HEADER_LEN);
+	} else {
+		outArr = seg;
+	}
+	// write this segment length
+	storeUint32(outArr, 0, seg.length);
+	outArr = outArr.subarray(4);
+	// pack data itself
+	sbox.packIntoArrWithNonce(outArr, data, nonce, fileKey, arrFactory);
+	return { seg: seg, dataLen: dataLen };
+};
+
+/**
+ * @param seg is an Uint8Array with segments bytes, or with a long enough
+ * part of it to contain header(s).
+ * @return an object with the following fields:
+ *  a) isFirstSeg is a boolean flag, telling if given segment is the first
+ *  segment of a xsp file;
+ *  b) segSize is an integer, telling this segmwnt's length;
+ *  c) fileKeyEnvelope, present only if isFirstSeg===true, is an Uint8Array
+ *     containing encrypted key of this file in a with-nonce format;
+ *  d) commonSegSize, present only if isFirstSeg===true, is an integer, telling
+ *     a maximum, or common segment size, used in this file. 
+ */
+function readHeaders(seg) {
+	"use strict";
+	var isFirstSegment = areBytesSame(seg, FILE_START, FILE_START.length)
+	, info = {
+		isFirstSeg: isFirstSegment
+	};
+	if (isFirstSegment) {
+		if (seg.length < FIRST_SEGMENT_HEADERS_LEN) {
+			throw new Error("Given seg array is "+seg.length+" bytes long, "+
+					"which is too short to be the first segment header."); }
+		info.fileKeyEnvelope = new Uint8Array(seg.subarray(
+				FILE_START.length, FILE_HEADER_LEN-4));
+		info.commonSegSize = loadUint32(seg, FILE_HEADER_LEN-4);
+	} else {
+		if (seg.length < SEGMENT_HEADER_LEN) {
+			throw new Error("Given seg array is "+seg.length+" bytes long, "+
+					"which is too short to be a segment header."); }
+	}
+	info.segSize = loadUint32(seg, (isFirstSegment ? FILE_HEADER_LEN : 0));
+	if (!isFirstSegment && (info.segSize > MAX_SEGMENT_SIZE)) {
+		throw new Error("Given seg array is misalligned with segment's bytes.");
+	}
+	return info;
+}
+
+/**
+ * This decrypts data from a segment of xsp file.
+ * @param seg is Uint8Array with xsp segment
+ * @param fileKey
+ * @param arrFactory
+ * @return an object with the following fields:
+ *  a) data is Uint8Array with bytes decrypted from a given segment
+ *  b) segLen is a number of bytes read from a given segment
+ */
+function openSegment(seg, fileKey, arrFactory) {
+	"use strict";
+	if (!fileKey) { throw new Error(
+			"This encryptor cannot be used, as file key has been wiped."); }
+	var segInfo = readHeaders(seg);
+	if (seg.length < segInfo.segSize) { throw new Error("Given seg array "+
+			"is shorter than extracted size of this segment."); }
+	// shorten seg to those bytes that will be opened as a with-nonce piece
+	var offset = 4 + (segInfo.isFirstSeg ? FILE_HEADER_LEN : 0);
+	seg = seg.subarray(offset, segInfo.segSize);
+	var data = sbox.openArrWithNonce(seg, fileKey, arrFactory);
+	return { data: data, segLen: segInfo.segSize };
+};
+
+/**
+ * @param fileKeyEnvelope
+ * @param segSize
+ * @param fileKey
+ * @param arrFactory
+ * @return encryptor object with the following methods:
+ *  a) packFirstSegment(data, nonce) encrypts given data, with given nonce,
+ *     into the first xsp file segment.
+ *     This method returns an object with segment bytes, and a field, telling
+ *     how many of data bytes have been packed into the segment.
+ *  b) packSegment(data, nonce) encrypts given data, with given nonce,
+ *     into a xsp file segment, which is not the first segment in a file.
+ *     This method returns an object with segment bytes, and a field, telling
+ *     how many of data bytes have been packed into the segment.
+ *  c) openSegment(seg) decrypts data bytes from a given segment.
+ *     This method returns an object with data bytes, and a field, telling
+ *     how many bytes have been read from a given segment array.
+ *  d) destroy() wipes the file key, known to this encryptor.
+ *     Encryptor becomes non-usable after this call.
+ */
+function makeEncryptor(fileKeyEnvelope, segSize, fileKey, arrFactory) {
+	"use strict";
+	var encr = {
+			packFirstSegment: function(data, nonce) {
+				try {
+					return packSegment(data, fileKeyEnvelope,
+							segSize, fileKey, nonce, arrFactory);
+				} finally {
+					arrFactory.wipeRecycled();
+				}
+			},
+			packSegment: function(data, nonce) {
+				try {
+					return packSegment(data, null,
+							segSize, fileKey, nonce, arrFactory);
+				} finally {
+					arrFactory.wipeRecycled();
+				}
+			},
+			openSegment: function(seg) {
+				try {
+					return openSegment(seg, fileKey, arrFactory);
+				} finally {
+					arrFactory.wipeRecycled();
+				}
+			},
+			commonSegSize: function() {
+				return segSize;
+			},
+			destroy: function() {
+				if (!fileKey) { return; }
+				TypedArraysFactory.prototype.wipe(fileKey);
+				fileKey = null;
+				arrFactory = null;
+			}
+	};
+	Object.freeze(encr);
+	return encr;
+}
+
+/**
+ * @param segSize is a common segment length.
+ * Segments can be shorter than this, e.g. last, or changed segments, but
+ * segments are never longer than this size.
+ * Note that data length within the segment is always a little shorter than
+ * segment's length, as crypto parameters and, in first segment, file
+ * parameters are preceding encrypted data bytes.
  * @param fileKey is Uint8Array with a key, that is used to encrypt data in every segment of this
  * file.
  * This file key itself is written into the first segment of the file in encrypted form.
  * @param nonce is Uint8Array, 24 bytes long, with nonce, used for encryption of file key.
  * @param key is Uint8Array, 32 bytes long, with key, used for encryption of file key.
- * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
- * It may be undefined, in which case an internally created one is used.
+ * @param arrFactory is an optional TypedArraysFactory, used to allocated/find
+ * an array for use. If it is undefined, an internally created one is used.
+ * @return encryptor object with the following methods:
+ *  a) packFirstSegment(data, nonce) encrypts given data, with given nonce,
+ *     into the first xsp file segment.
+ *     This method returns an object with segment bytes, and a field, telling
+ *     how many of data bytes have been packed into the segment.
+ *  b) packSegment(data, nonce) encrypts given data, with given nonce,
+ *     into a xsp file segment, which is not the first segment in a file.
+ *     This method returns an object with segment bytes, and a field, telling
+ *     how many of data bytes have been packed into the segment.
+ *  c) openSegment(seg) decrypts data bytes from a given segment.
+ *     This method returns an object with data bytes, and a field, telling
+ *     how many bytes have been read from a given segment array.
+ *  d) destroy() wipes the file key, known to this encryptor.
+ *     Encryptor becomes non-usable after this call.
  */
-function Writer(segSize, fileKey, nonce, key, arrFactory) {
+function makeNewFileEncryptor(segSize, fileKey, nonce, key, arrFactory) {
 	"use strict";
-	if (('number' !== typeof segSize) ||
-			(segSize < MIN_SEGMENT_SIZE) ||
-			(segSize > MAX_SEGMENT_SIZE)) {
-		throw new Error("Given segment length parameter must be an integer between "+
-				MIN_SEGMENT_SIZE+" and "+MAX_SEGMENT_SIZE);
+	if (fileKey.length !== 32) { throw new Error("Given fileKey array is "+
+			fileKey.length+" bytes long, instead of 32"); }
+	validateSegSize(segSize);
+	var fileKeyEnvelope = new Uint8Array(72);
+	fileKey = new Uint8Array(fileKey);
+	if (!arrFactory) { arrFactory = new TypedArraysFactory(); }
+	try {
+		sbox.packIntoArrWithNonce(
+				fileKeyEnvelope, fileKey, nonce, key, arrFactory);
+	} finally {
+		arrFactory.wipeRecycled();
 	}
-	Math.floor(segSize);
-	this.segSize = segSize;
-	if (fileKey.length !== 32) { throw new Error(
-			"Given fileKey array is "+fileKey.length+" bytes long, instead of 32"); }
-	this.fileKey = fileKey;
-	this.fileKeyEnvelope = new Uint8Array(72);
-	sbox.packIntoArrWithNonce(this.fileKeyEnvelope, this.fileKey, nonce, key, arrFactory);
-}
-
-Writer.prototype.wipeFileKey = wipeFileKey;
-
-/**
- * This function writes file header at the start of the given byte array.
- * This function should be invoked with call() method on writer object.
- * @param seg is Uint8Array for segment bytes
- */
-function writeFileHeader(seg) {
-	"use strict";
-	// write file starting string
-	seg.set(FILE_START);
-	// write key envelope
-	seg.set(this.fileKeyEnvelope, FILE_START.length);
-	// write max segment length
-	storeUint32(seg, FILE_HEADER_LEN-4, this.segSize);
+	return makeEncryptor(fileKeyEnvelope, segSize, fileKey, arrFactory);
 }
 
 /**
- * @param inArr is Uint8Array with bytes that need to be encrypted and packed into xsp file.
- * @param offset is position in the given inArr, from which reading starts.
- * @param isFirstSegment is a boolean flag telling, if the first file segment should be produced
- * (true value), or not (false value).
- * @param nonce is Uint8Array, 24 bytes long, with nonce for this particular segment.
- * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
- * It may be undefined, in which case an internally created one is used.
- * @returns Uint8Array with created segment of xsp file.
- * If there are enough bytes to fill segment to maximum length, the segment will have
- * maximum length.
- * If there are not enough bytes for writing into file, segment will be shorter.
- * Thus, only the last segment of xsp file may be shorter than maximum segment size.
+ * @param firstSegHeader is an array containing first segment's header,
+ * which includes a file header.
+ * @param key is Uint8Array, 32 bytes long, with key, used for encryption of file key.
+ * @param arrFactory is an optional TypedArraysFactory, used to allocated/find
+ * an array for use. If it is undefined, an internally created one is used.
+ * @return encryptor object with the following methods:
+ *  a) packFirstSegment(data, nonce) encrypts given data, with given nonce,
+ *     into the first xsp file segment.
+ *     This method returns an object with segment bytes, and a field, telling
+ *     how many of data bytes have been packed into the segment.
+ *  b) packSegment(data, nonce) encrypts given data, with given nonce,
+ *     into a xsp file segment, which is not the first segment in a file.
+ *     This method returns an object with segment bytes, and a field, telling
+ *     how many of data bytes have been packed into the segment.
+ *  c) openSegment(seg) decrypts data bytes from a given segment.
+ *     This method returns an object with data bytes, and a field, telling
+ *     how many bytes have been read from a given segment array.
+ *  d) destroy() wipes the file key, known to this encryptor.
+ *     Encryptor becomes non-usable after this call.
  */
-Writer.prototype.packSegment = function(inArr, offset, isFirstSegment, nonce, arrFactory) {
+function makeExistingFileEncryptor(firstSegHeader, key, arrFactory) {
 	"use strict";
-	if (!this.fileKey) { throw new Error("This writer cannot be used, as file key has been wiped."); }
-	var dataLength = inArr.length - offset;
-	if (dataLength <= 0) { throw new Error("There are no bytes to encode."); }
-	dataLength = Math.min(dataLength, dataLenInSegment(this.segSize, isFirstSegment));
-	var seg = new Uint8Array(
-			dataLength + SEGMENT_CRYPTO_HEADER_LEN + (isFirstSegment ? FILE_HEADER_LEN : 0))
-	, m = inArr.subarray(offset, offset + dataLength)
-	, outArr;
-	if (isFirstSegment) {
-		writeFileHeader.call(this, seg);
-		outArr = seg.subarray(FILE_HEADER_LEN);
-	} else {
-		outArr = seg;
+	var segInfo = readHeaders(firstSegHeader);
+	if (!segInfo.isFirstSeg) { throw new Error("Given firstSegHeader array "+
+			"does not contain file header, from the first file segment."); }
+	if (!arrFactory) { arrFactory = new TypedArraysFactory(); }
+	try {
+		var fileKey = sbox.openArrWithNonce(
+				segInfo.fileKeyEnvelope, key, arrFactory);
+	} finally {
+		arrFactory.wipeRecycled();
 	}
-	sbox.packIntoArrWithNonce(outArr, m, nonce, this.fileKey, arrFactory);
-	return seg;
-};
-
-/**
- * This is a constructor function for xsp file reader.
- * Reader decrypts data from xsp file segments.
- * This constructor will initialize reader by reading around 80 bytes from the first segment of
- * xsp file, opening file key, and finding an expected length of segments (note, only the last
- * segment is shorter than maximum length).
- * If needed, use segment length to find boundaries between segments.
- * Open segments in any order, but make sure to apply a different function to the first segment,
- * as its initial layout is different from following segments.
- * @param fileHeaderBytes is Uint8Array with bytes of xps file header.
- * @param key is Uint8Array, 32 bytes long, with key to decrypt file key, located in the first segment.
- * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
- * It may be undefined, in which case an internally created one is used.
- */
-function Reader(fileHeaderBytes, key, arrFactory) {
-	"use strict";
-	if (fileHeaderBytes.length < FILE_HEADER_LEN) { throw new Error("Given headerBytes array is " +
-			fileHeaderBytes.length+" bytes long, but it should be longer than "+FILE_HEADER_LEN); }
-	// read file starting sequence
-	for (var i=0; i<FILE_START.length; i+=1) {
-		if (fileHeaderBytes[i] !== FILE_START[i]) { throw new Error(
-				"Given fileHeaderBytes array does not start, as xsp file should."); }
-	}
-	// read file key
-	this.fileKey = sbox.openArrWithNonce(
-			fileHeaderBytes.subarray(FILE_START.length, FILE_START.length+72), key, arrFactory);
-	// read max segment length
-	this.segSize = loadUint32(fileHeaderBytes, FILE_HEADER_LEN-4);
+	return makeEncryptor(segInfo.fileKeyEnvelope, segInfo.commonSegSize,
+			fileKey, arrFactory);
 }
 
-/**
- * This decrypts data from a segment of xsp file.
- * @param seg is Uint8Array with bytes of a file segment.
- * @param isFirstSegment is a boolean flag telling, if given file segment is the first in file
- * (true value), or not (false value).
- * @param arrFactory is TypedArraysFactory, used to allocated/find an array for use.
- * It may be undefined, in which case an internally created one is used.
- */
-Reader.prototype.openSegment = function(seg, isFirstSegment, arrFactory) {
-	"use strict";
-	if (!this.fileKey) { throw new Error("This reader cannot be used, as file key has been wiped."); }
-	if (seg.length > this.segSize) { throw new Error("Given seg array is "+seg.length+
-			" bytes long, which is longer than set segment length maximum "+this.segSize); }
-	var c;
-	if (isFirstSegment) {
-		if (seg.length > FILE_HEADER_LEN+SEGMENT_CRYPTO_HEADER_LEN) {
-			// if segment array is shorter than segSize, subarray() will set end index to array's length
-			c = seg.subarray(FILE_HEADER_LEN, this.segSize);
-		} else {
-			throw new Error("Given seg array is "+seg.length+" bytes long, which is " +
-					"shorter than minimum "+(FILE_HEADER_LEN+SEGMENT_CRYPTO_HEADER_LEN+1));
-		}
-	} else {
-		if (seg.length > SEGMENT_CRYPTO_HEADER_LEN) {
-			// if segment array is shorter than segSize, subarray() will set end index to array's length
-			c = seg.subarray(0, this.segSize);
-		} else {
-			throw new Error("Given seg array is "+seg.length+" bytes long, which is " +
-					"shorter than minimum "+(SEGMENT_CRYPTO_HEADER_LEN+1));
-		}
-	}
-	return sbox.openArrWithNonce(c, this.fileKey, arrFactory);
-};
-
-Reader.prototype.wipeFileKey = wipeFileKey;
-
-module.exports = {
-		Reader: Reader,
-		Writer: Writer,
-		SEGMENT_CRYPTO_HEADER_LEN: SEGMENT_CRYPTO_HEADER_LEN,
+var xspModule = {
+		SEGMENT_HEADER_LEN: SEGMENT_HEADER_LEN,
 		FILE_HEADER_LEN: FILE_HEADER_LEN,
-		dataLenInSegment: dataLenInSegment,
-		posInDataOf: posInDataOf,
-		posInFileOf: posInFileOf
+		FIRST_SEGMENT_HEADERS_LEN: FIRST_SEGMENT_HEADERS_LEN,
+		readHeaders: readHeaders,
+		makeNewFileEncryptor: makeNewFileEncryptor,
+		makeExistingFileEncryptor: makeExistingFileEncryptor
 };
-},{"../boxes/secret_box":5}],10:[function(require,module,exports){
+
+Object.freeze(xspModule);
+
+module.exports = xspModule;
+
+},{"../boxes/secret_box":5,"../util/arrays":10,"../util/verify":13}],10:[function(require,module,exports){
 /* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -2102,6 +2181,56 @@ module.exports = {
 		multChecked: multChecked
 };
 },{}],12:[function(require,module,exports){
+/* Copyright(c) 2013 3NSoft Inc.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/**
+ * 
+ * @param n is Uint8Array, 24 bytes long nonce that will be changed in-place.
+ * @param delta is a number, by which 8-byte numbers, constituting given
+ * 24-bytes nonce, are advanced.
+ */
+function advanceNonce(n, delta) {
+	"use strict";
+	if (n.BYTES_PER_ELEMENT !== 1) { throw new TypeError(
+			"Nonce array n must be Uint8Array."); }
+	if (n.length !== 24) { throw new Error(
+			"Nonce array n should have 24 elements (bytes) in it, but it is "+
+			n.length+" elements long."); }
+	var t;
+	for (var i=0; i<3; i+=1) {
+		t = delta;
+		for (var j=0; j<8; j+=1) {
+			t += n[j+i*8];
+			n[j+i*8] = t & 0xff;
+			t >>>= 8;
+			if (t === 0) { break; }
+		}
+	}
+}
+
+function advanceNonceOddly(n) {
+	"use strict";
+	advanceNonce(n, 1);
+}
+
+function advanceNonceEvenly(n) {
+	"use strict";
+	advanceNonce(n, 2);
+}
+
+var nonceModule = {
+		advanceOddly: advanceNonceOddly,
+		advanceEvenly: advanceNonceEvenly
+};
+
+Object.freeze(nonceModule);
+
+module.exports = nonceModule;
+
+},{}],13:[function(require,module,exports){
 /* Copyright(c) 2013 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this

@@ -45,12 +45,21 @@ Decrypting, or opening goes through these steps in reverse. First, Poly1305 code
     // to encrypt, or pack plain text bytes into cipher bytes, use
     var cipher_bytes = nacl.secret_box.pack(plain_bytes, nonce, key);
 
-    // decryption, or opening is done by
+    // decr## XSP file formatyption, or opening is done by
     var result_bytes = nacl.secret_box.open(cipher_bytes, nonce, key);
 
 Above pack method will produce an Uint8Array with cipher, offset by 16 zero bytes in the underlying buffer. Deciphered bytes, on the other hand, are offset by 32 zero bytes. This should always be kept in mind, when transferring raw buffers to/from web-workers. In all other places, this padding is never noticed, thanks to [typed array api](https://developer.mozilla.org/en-US/docs/Web/API/Uint8Array).
 
-Key is 32 bytes long. Nonce is 24 bytes. Nonce means number-used-once, i.e. it should be unique for every segment encrypted by the same key. Sometimes, when storing things, it is convenient to pack cipher with nonce (WN) into the same array. For this, secret_box has formatWN object, which is used analogously:
+Key is 32 bytes long. Nonce is 24 bytes. Nonce means number-used-once, i.e. it should be unique for every segment encrypted by the same key.
+
+Sometimes, when storing things, it is convenient to pack cipher together with nonce (WN) into the same array.
+
+    +-------+ +------+ +---------------+
+    | nonce | | poly | |  data cipher  |
+    +-------+ +------+ +---------------+
+    | <----       WN format      ----> |
+
+For this, secret_box has formatWN object, which is used analogously:
 
     // encrypting, and placing nonce as first 24 bytes infront NaCl's byte output layout
     var cipher_bytes = nacl.secret_box.formatWN.pack(plain_bytes, nonce, key);
@@ -168,12 +177,125 @@ It is still not settled into production code in NaCl. Period. When it is ready, 
 
 Each NaCl's cipher must be read completely, before any plain text output.
 Such requirement makes reading big files awkward.
-Thus, the simplest solution is to pack NaCl's binary ciphers into self-contained small segments.
-Each segment must be encrypted with a different nonce.
-When segments are same-size, there is a predictable mapping when random access is needed.
-Such format we call XSP (XSalsa+Poly), and provide utility to pack and open segments.
-Each file's first segment contains file header with encrypted file key, suggesting a policy of one key per file.
-This may allow simpler sharing of files in a web-service setting, as only file key section needs to be re-encrypted, when a new user gets the file.
+Thus, the simplest solution is to pack NaCl's binary ciphers into
+self-contained small segments, each encrypted with a different nonce.
+Such segment-based format is also useful in a streaming situation, when one
+end starts to send a file, without knowing when EOF comes.
+
+We call this format XSP, to stand for XSalsa+Poly, to indicate that file layout
+is specifically tailored for storing NaCl's secret box's ciphers.
+
+Each segment contains a header.
+The first segment contains a file header, followed by a common segment header.
+
+File header layout:
+
+    +-----+  +-------------------+ +--------------+
+    | xsp |  | file key envelope | | max seg size |
+    +-----+  +-------------------+ +--------------+
+
+First three bytes is a constant ASCII encoded string 'xsp'.
+This takes up first 3 bytes.
+
+"File key envelope" is an encrypted, and packed with-nonce (WN format), key,
+used to encrypt every segment of a given file.
+Length of this envelope calculated as follows: key is 32 bytes, add 16 Poly
+bytes, and 24 nonce.
+This gives 72 bytes for file key envelope.
+
+"Max seg size" is 4 bytes with a maximum, or common segment length, written
+in little endian way.
+Total length of any segment in this file should never exceed given value. 
+
+Thus, file header, has a predictable length of 79 bytes.
+
+Segment layout:
+
+    | <-- segment header  --> |
+    +-------------------------+ +---------------+
+    | seg size | nonce | poly | |  data cipher  |
+    +-------------------------+ +---------------+
+               | <----      WN format     ----> |
+
+Segment starts with 4 bytes, containing total length of this segment, written
+in little endian way.
+Next 40 bytes contain nonce and poly bytes.
+These first 44 bytes we call a segment header.
+
+Notice that nonce and poly in the header are layed out so, that together with
+the following data cipher, they constitute WN pack format.
+
+First segment layout:
+
+    +-------------+ +----------------+ +---------------+
+    | file header | | segment header | |  data cipher  |
+    +-------------+ +----------------+ +---------------+
+
+Data cipher are the crypto stream bytes, into which data was xor-ed.
+Therefore, data cipher's length is exactly the same as encoded data's length.
+
+## API for packing/opening XSP segments 
+
+There is a sub-module, with XSP-related functionality:
+
+    var xsp = nacl.fileXSP;
+
+There are two situations, in which xsp encryptor can be initialized.
+First situation is when there is no existing xsp file:
+
+    var enc = xsp.makeNewFileEncryptor(maxSegSize, fileKey, nonce, masterKey);
+
+where masterKey and given nonce are used to create encrypted file key envelope.
+
+Second situation is when file exists:
+
+    var enc = xsp.makeExistingFileEncryptor(firstSegHeader, masterKey);
+
+Encryptor can pack Uint8Array data into segments:
+
+    var segments = []
+    , dataOffset = 0;
+    
+    // packing first segment uses special method
+    var encRes = enc.packFirstSegment(data, nonce);
+    
+    // result object has created segment, and a number of packed data bytes
+    segments.push( encRes.seg );
+    dataOffset += encRes.dataLen;
+    
+    // nonce must be changed for use in a different segment
+    nacl.advanceNonceOddly(nonce);
+    
+    while(dataOffset < data.length) {
+        
+        // packing other segments
+        encRes = enc.packSegment(data, nonce);
+        
+        segments.push( encRes.seg );
+        dataOffset += encRes.dataLen;
+        nacl.advanceNonceOddly(nonce);
+    }
+
+Encryptor can open segments (notice how incoming arrays must be alligned
+with segments' starting point), given complete xsp file as Uint8Array:
+
+    var fileOffset = 0
+    , dataParts = []
+    , decRes;
+    
+    while(fileOffset < xspFile.length) {
+        
+        decRes = enc.openSegment( xspFile.subarray(fileOffset) );
+        
+        // result object has opened data, and segment's size, read from file
+        dataParts.push( decRes.data );
+        fileOffset += decRes.segLen
+    }
+
+Encryptors should be properly disposed after use:
+
+    enc.destroy();
+
 
 ## License
 
