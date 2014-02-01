@@ -82,10 +82,7 @@ It is important to always use different nonce, when encrypting something new wit
 
 It is common, that certain code needs to be given encryption/decryption functionality, but according to [principle of least authority](https://en.wikipedia.org/wiki/Principle_of_least_privilege) such code does not necessarily need to know secret key, with which encryption is done. So, there is an encryptor for opening and packing, with inbuilt even advance of the nonce, on every new cipher that is generated. It is made to produce and read ciphers with-nonce format.
 
-    var encryptor = nacl.makeSecretBoxEncryptor(key, nextNonce);
-
-    // or with
-    var encryptor = nacl.secret_box.makeEncryptor(key, nextNonce);
+    var encryptor = nacl.secret_box.formatWN.makeEncryptor(key, nextNonce);
 
     // packing bytes is done with
     var cipher_bytes = encryptor.pack(plain_bytes);
@@ -114,52 +111,56 @@ There are two ways to use box. The first way is to always do two things, calcula
     // Bob opens the message
     var msg_bytes = nacl.box.open(cipher_bytes, nonce, alice_pkey, bob_skey);
 
-The second way is to calculate DH-shared key once and use it for packing/opening multiple messages, with box.pack_stream and box.open_stream, which are just nicknames of described above secret_box.pack and secret_box.open. Or, we may use encryptors for the following example of two-party exchanges.
+The second way is to calculate DH-shared key once and use it for packing/opening multiple messages, with box.stream.pack and box.stream.open, which are just nicknames of described above secret_box.pack and secret_box.open.
+
+    // Alice calculates DH-shared key
+    var dhshared_key = nacl.box.calc_dhshared_key(bob_pkey, alice_skey);
+    // Alice encrypts message for Bob
+    var cipher_bytes = nacl.box.stream.pack(msg_bytes, nonce, dhshared_key);
+
+    // Bob calculates DH-shared key
+    var dhshared_key = nacl.box.calc_dhshared_key(alice_pkey, bob_skey);
+    // Bob opens the message
+    var msg_bytes = nacl.box.stream.open(cipher_bytes, nonce, dhshared_key);
+
+Or, we may use box encryptors that do first step of DH-shared key calculation only at creation.
 
 Alice's side:
-
-    // calculate DH-shared key for encryptor
-    var dhshared_key = nacl.box.calc_dhshared_key(bob_pkey, alice_skey);
 
     // generate nonce, browser example
     var nonce = new Uint8Array(24);
     crypto.getRandomValues(nonce);
 
-    // make encryptor
-    var encryptor = nacl.makeSecretBoxEncryptor(dhshared_key, nonce);
-
-    // dhshared_key was copied into encryptor, and, since it is no longer needed,
-    // it should be wiped from the memory
-    nacl.TypedArraysFactory.prototype.wipe(dhshared_key);
+    // make encryptor to produce with-nonce format
+    var encryptor = nacl.box.formatWN.makeEncryptor(bob_pkey, alice_skey, nonce);
 
     // pack messages to Bob
     var cipher_to_send = encryptor.pack(msg_bytes);
 
     // open mesages from Bob
     var msg_from_bob = encryptor.open(received_cipher);
+    
+    // when encryptor is no longer needed, key should be properly wiped from memory
+    encryptor.destroy()
 
 Bob's side:
 
-    // calculate DH-shared key for encryptor
-    var dhshared_key = nacl.box.calc_dhshared_key(alice_pkey, bob_skey);
-
     // get nonce from Alice's first message, advance it oddly, and
     // use for encryptor, as encryptors on both sides advance nonces evenly
-    var nonce = nacl.secret_box.formatWN.copyNonceFrom(cipher1_from_alice);
+    var nonce = nacl.box.formatWN.copyNonceFrom(cipher1_from_alice);
     nacl.advanceNonceOddly(nonce);
 
-    // make encryptor
-    var encryptor = nacl.makeSecretBoxEncryptor(dhshared_key, nonce);
-
-    // dhshared_key was copied into encryptor, and, since it is no longer needed,
-    // it should be wiped from the memory
-    nacl.TypedArraysFactory.prototype.wipe(dhshared_key);
+    // make encryptor to produce with-nonce format
+    var encryptor = nacl.box.formatWN.makeEncryptor(alice_pkey, bob_skey, nonce);
 
     // pack messages to Alice
     var cipher_to_send = encryptor.pack(msg_bytes);
 
     // open mesages from Alice
     var msg_from_alice = encryptor.open(received_cipher);
+    
+    // when encryptor is no longer needed, key should be properly wiped from memory
+    encryptor.destroy()
 
 ## Random number generation
 

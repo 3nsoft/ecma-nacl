@@ -115,7 +115,7 @@ console.log("PASS.\n");
  */
 console.log("Testing packing message with nonce");
 result = new Uint8Array(40+m.length);	// prepare array for output bytes 
-sbox.packIntoArrWithNonce(result, m, nonce, firstkey, arrFactory);
+sbox.formatWN.packInto(result, m, nonce, firstkey, arrFactory);
 // first 24 bytes of result should contain nonce
 compare(result.subarray(0,24), nonce);
 // other bytes should contain cipher
@@ -130,7 +130,7 @@ console.log("Testing opening message from array with nonce and cipher");
 result = new Uint8Array(nonce.length+c.length);
 result.set(nonce);
 result.set(c, nonce.length);
-result = sbox.openArrWithNonce(result, firstkey, arrFactory);
+result = sbox.formatWN.open(result, firstkey, arrFactory);
 //result is message without the pad
 compare(result, m);
 //but it is a buffer view that hides these zeros
