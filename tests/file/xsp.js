@@ -22,13 +22,12 @@ function testXSPFormatPackAndOpen(dataLen, segSize) {
 
 	var data = getRandom(dataLen)
 	, fileKey = getRandom(32)
-	, masterKey = getRandom(32)
-	, nonceToEncFileKey = getRandom(24)
+	, fileKeyEncr = nacl.secret_box.formatWN.makeEncryptor(
+			getRandom(32), getRandom(24))
 	, fileSegments = [];
 
 	// initialize encryptor
-	var enc = xsp.makeNewFileEncryptor(
-			segSize, new Uint8Array(fileKey), nonceToEncFileKey, masterKey)
+	var enc = xsp.makeNewFileEncryptor(segSize, fileKey, fileKeyEncr.pack)
 	, nonce = getRandom(24);
 
 	// pack segments
@@ -64,7 +63,7 @@ function testXSPFormatPackAndOpen(dataLen, segSize) {
 	var firstSegHeader = completeFile.subarray(
 			0, xsp.FIRST_SEGMENT_HEADERS_LEN)
 	, dataParts = [];
-	enc = new xsp.makeExistingFileEncryptor(firstSegHeader, masterKey);
+	enc = new xsp.makeExistingFileEncryptor(firstSegHeader, fileKeyEncr.open);
 	
 	assert.strictEqual(enc.commonSegSize(), segSize,
 			"Encryptor recreated incorrect common segment length");

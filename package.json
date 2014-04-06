@@ -1,6 +1,6 @@
 {
   "name": "ecma-nacl",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "JavaScript (ECMAScript) version of NaCl Cryptographic library",
   "main": "./lib/ecma-nacl.js",
   "repository": {
