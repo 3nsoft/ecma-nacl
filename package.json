@@ -1,19 +1,30 @@
 {
   "name": "ecma-nacl",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "JavaScript (ECMAScript) version of NaCl Cryptographic library",
-  "main": "./lib/ecma-nacl.js",
+  "main": "./dist/lib-node/ecma-nacl.js",
   "repository": {
-	"type": "git",
-	"url": "https://github.com/3nsoft/ecma-nacl.git"
+    "type": "git",
+    "url": "https://github.com/3nsoft/ecma-nacl.git"
   },
   "engines": {
     "node": "*"
   },
   "devDependencies": {
-  	"browserify": ">=2.34.3",
-  	"js-nacl": "0.5.0",
-  	"tweetnacl": "0.13.0"
+    "browserify": "^9.0.8",
+    "gulp": "^3.8.11",
+    "gulp-nodeunit-runner": "^0.2.2",
+    "gulp-rename": "^1.2.2",
+    "gulp-streamify": "0.0.5",
+    "gulp-typescript": "^2.6.0",
+    "gulp-uglify": "^1.2.0",
+    "js-nacl": "^0.6.0",
+    "merge2": "^0.3.4",
+    "nodeunit": "^0.9.1",
+    "q": "^1.2.0",
+    "tsify": "^0.8.1",
+    "tweetnacl": "^0.13.1",
+    "vinyl-source-stream": "^1.1.0"
   },
   "keywords": [
     "encryption",
@@ -22,11 +33,14 @@
     "nacl"
   ],
   "contributors": [
-    { "name": "Mikalai Birukou",
-      "email": "mikalai@birukou.net" }
+    {
+      "name": "Mikalai Birukou",
+      "email": "mikalai@birukou.net"
+    }
   ],
   "license": {
-	  "type": "MPLv2.0",
-	  "url": "http://mozilla.org/MPL/2.0/"},
+    "type": "MPLv2.0",
+    "url": "http://mozilla.org/MPL/2.0/"
+  },
   "readmeFilename": "README.md"
 }

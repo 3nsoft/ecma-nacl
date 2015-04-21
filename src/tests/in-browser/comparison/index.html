@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!--
+Copyright(c) 2013 - 2015 3NSoft Inc.
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, you can obtain one at http://mozilla.org/MPL/2.0/.
+ -->
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Comparison runs of ecma-nacl to other NaCl implementations</title>
+	<script type="text/javascript" src="../ecma-nacl.js"></script>
+	<script type="text/javascript" src="../ext-libs/nacl_factory.js"></script>
+	<script type="text/javascript" src="./index.js"></script>
+</head>
+<body>
+	<button onclick="runTestsInUIEventLoop()">
+		Start tests in UI event loop
+	</button>
+	<button onclick="startTestsInWebWorker()">
+		Start tests of web worker
+	</button>
+	<p>Runs in UI event loop may look unresponsive, and results may vary into
+	slower area, due to browser's mingling with UI event loop, and script
+	responsiveness checking.</p>
+	<button onclick="clearLog()">Clear Log</button>
+	<div id="tests-log">
+</div>
+</body>
+</html>
