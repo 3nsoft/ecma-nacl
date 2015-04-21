@@ -2,7 +2,7 @@
   "name": "ecma-nacl",
   "version": "2.0.1",
   "description": "JavaScript (ECMAScript) version of NaCl Cryptographic library",
-  "main": "./dist/lib-node/ecma-nacl.js",
+  "main": "./dist/lib/ecma-nacl.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/3nsoft/ecma-nacl.git"
@@ -21,7 +21,6 @@
     "js-nacl": "^0.6.0",
     "merge2": "^0.3.4",
     "nodeunit": "^0.9.1",
-    "q": "^1.2.0",
     "tsify": "^0.8.1",
     "tweetnacl": "^0.13.1",
     "vinyl-source-stream": "^1.1.0"
