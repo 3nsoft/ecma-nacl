@@ -243,9 +243,8 @@ So, you should obtain cryptographically strong random bytes yourself. In node, t
 
 Scrypt derives a key from users password.
 Algorithm is memory-hard, which means it uses lots and lots of memory.
-There are three parameters that go into derivation: ``` N```,
-``` r``` and
-``` p```.
+There are three parameters that go into derivation: ``` N, r```
+and ``` p```.
 
 Amount of memory used is roughly ``` 128 * N * r == r * 2^(7+logN)``` bytes.
 With ``` r = 8```,
