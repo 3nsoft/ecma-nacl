@@ -382,7 +382,7 @@ var writer = xsp.segments.makeWriter(header, masterKey, getRandom);
 writer.destroy();
 ```
 
-Currently, at version 2.0.0, fficient splicing functionality is not implemented, but it shall exist, as file format allows for it.
+Currently, at version 2.0.0, efficient splicing functionality is not implemented, but it shall exist, as file format allows for it.
 We also plan to add some fool-proof restrictions into implementation to disallow packing the same segment twice.
 For now, users are advised to be careful, and to pack each segment only once.
 
