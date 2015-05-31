@@ -330,7 +330,7 @@ Endless file has only one segment chain, and both length of the last segment, an
 
 #### Finite file
 
-(72+46+n*30)-byte header is used for a file with knwon length (finite file).
+(72+46+n*30)-byte header is used for a file with known length (finite file).
 n is a number of segment chains in the file.
 Header layout:
 
