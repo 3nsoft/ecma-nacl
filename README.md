@@ -274,7 +274,7 @@ Colin Percival's [paper](http://www.tarsnap.com/scrypt/scrypt.pdf) about scrypt 
 
 Each NaCl's cipher must be read completely, before any plain text output.
 Such requirement makes reading big files awkward.
-Therefore, we a file format, which satisfies the following requirements:
+Therefore, we need a file format, which satisfies the following requirements:
 
  * file should be split into segments;
  * it should be possible to randomly read segments;
