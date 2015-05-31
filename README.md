@@ -283,7 +283,7 @@ Therefore, we a file format, which satisfies the following requirements:
  * segments' nonces should never be reused, even when performing partial changes to a file, without complete file re-encryption;
  * it should be possible to detect segment reshuffling;
  * there should be cryptographic proof of a complete file size, for files with
-unknown size;
+known size;
  * file should be encrypted by its own key, encrypted with some external (master) key;
  * there should be a stream-like setting, where segments can be encrypted and read without knowledge of a final length;
  * when complete length of a stream is finally known, switching to known-length setting should be cheap.
