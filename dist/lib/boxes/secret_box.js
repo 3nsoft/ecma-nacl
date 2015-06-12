@@ -318,7 +318,7 @@ var formatWN;
     }
     formatWN.makeDecryptor = makeDecryptor;
 })(formatWN = exports.formatWN || (exports.formatWN = {}));
-Object.freeze(exports.formatWN);
+Object.freeze(formatWN);
 exports.NONCE_LENGTH = 24;
 exports.KEY_LENGTH = 32;
 exports.POLY_LENGTH = 16;

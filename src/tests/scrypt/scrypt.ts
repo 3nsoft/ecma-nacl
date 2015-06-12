@@ -88,7 +88,7 @@ export function with_logN_14_r_8_p_1(test: nu.Test) {
 }
 
 //
-// Test vector below uses 2^(128*8*20)==2^30==1GB, and JavaScript throws up
+// Test vector below uses (2^20)*(128*8)==2^30==1GB, and JavaScript throws up
 // instead of giving this much bytes in a single array.
 //
 ///**

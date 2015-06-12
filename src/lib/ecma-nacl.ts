@@ -20,8 +20,8 @@ export module hashing.sha512 {
 	export var hash = sha512Mod.hash;
 	export var makeHasher = sha512Mod.makeHasher;
 }
-Object.freeze(exports.hashing);
-Object.freeze(exports.hashing.sha512);
+Object.freeze(hashing);
+Object.freeze(hashing.sha512);
 
 import scryptMod = require('./scrypt/scrypt');
 export var scrypt = scryptMod.scrypt;

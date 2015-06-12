@@ -439,15 +439,15 @@ export interface SegmentsReader {
 /**
  * @param header is an array with header files. Array must contain only
  * header's bytes. Arrays's length is used to decide on how to process it.
- * @param masterKey
+ * @param mkeyDecr is a decryptor, based on a master key
  * @param arrFactory (optional)
  */
-export function makeReader(header: Uint8Array, masterKey: Uint8Array,
+export function makeReader(header: Uint8Array, mkeyDecr: sbox.Decryptor,
 			arrFactory?: arrays.Factory): SegmentsReader {
 	if (!arrFactory) {
 		arrFactory = arrays.makeFactory();
 	}
-	var reader = new SegReader(header, masterKey, arrFactory);
+	var reader = new SegReader(header, mkeyDecr, arrFactory);
 	var wrap: SegmentsReader = {
 		locationInSegments: reader.locationInSegments.bind(reader),
 		openSeg: reader.openSeg.bind(reader),
@@ -467,14 +467,13 @@ class SegReader extends SegInfoHolder implements SegmentsReader {
 	
 	private arrFactory: arrays.Factory;
 	
-	constructor(header: Uint8Array, masterKey: Uint8Array,
+	constructor(header: Uint8Array, mkeyDecr: sbox.Decryptor,
 			arrFactory: arrays.Factory) {
 		super();
 		this.arrFactory = arrFactory;
 		if (header.length < 72) { throw new Error(
 				"Given header array is too short."); }
-		this.key = sbox.formatWN.open(
-				header.subarray(0, 72), masterKey, this.arrFactory);
+		this.key = mkeyDecr.open(header.subarray(0, 72));
 		header = header.subarray(72);
 		if (header.length === 65) {
 			this.initForEndlessFile(header, this.key, this.arrFactory);
@@ -532,7 +531,7 @@ export interface SegmentsWriter {
 	 */
 	destroy(): void;
 	
-	packHeader(mKey: Uint8Array): Uint8Array;
+	packHeader(mkeyEnc: sbox.Encryptor): Uint8Array;
 	
 	setContentLength(totalContentLen: number): void;
 	
@@ -571,22 +570,22 @@ export function makeNewWriter(segSizein256bs: number,
 /**
  * @param header is an array with header files. Array must contain only
  * header's bytes. Arrays's length is used to decide on how to process it.
- * @param masterKey
+ * @param mkeyDecr is a decryptor, based on a master key
  * @param randomBytes is a function that produces cryptographically strong
  * random numbers (bytes).
  * @param arrFactory (optional)
  */
-export function makeWriter(header: Uint8Array, masterKey: Uint8Array,
+export function makeWriter(header: Uint8Array, mkeyDecr: sbox.Decryptor,
 		randomBytes: (n: number) => Uint8Array,
 		arrFactory?: arrays.Factory): SegmentsWriter {
 	if (!arrFactory) {
 		arrFactory = arrays.makeFactory();
 	}
-	var writer = new SegWriter(header, masterKey, null, randomBytes, arrFactory);
+	var writer = new SegWriter(header, mkeyDecr, null, randomBytes, arrFactory);
 	return makeWriterWrap(writer);
 }
 
-class SegWriter extends SegInfoHolder {
+class SegWriter extends SegInfoHolder implements SegmentsWriter {
 	
 	/**
 	 * This is a file key, which should be wipped, after this object
@@ -600,7 +599,7 @@ class SegWriter extends SegInfoHolder {
 	
 	private headerModified: boolean;
 	
-	constructor(header: Uint8Array, masterKey: Uint8Array,
+	constructor(header: Uint8Array, mkeyDecr: sbox.Decryptor,
 			segSizein256bs: number, randomBytes: (n: number) => Uint8Array,
 			arrFactory: arrays.Factory) {
 		super();
@@ -609,8 +608,7 @@ class SegWriter extends SegInfoHolder {
 		if (header) {
 			if (header.length < 72) { throw new Error(
 					"Given header array is too short."); }
-			this.key = sbox.formatWN.open(
-					header.subarray(0, 72), masterKey, this.arrFactory);
+			this.key = mkeyDecr.open(header.subarray(0, 72));
 			header = header.subarray(72);
 			if (header.length === 65) {
 				this.initForEndlessFile(header, this.key, this.arrFactory);
@@ -672,12 +670,11 @@ class SegWriter extends SegInfoHolder {
 		this.arrFactory = null;
 	}
 	
-	packHeader(mKey: Uint8Array): Uint8Array {
+	packHeader(mkeyEnc: sbox.Encryptor): Uint8Array {
 		if (!this.headerModified) { new Error(
 				"Header has not been modified."); }
 		// pack file key
-		var packedfileKey = sbox.formatWN.pack(
-				this.key, this.randomBytes(24), mKey, this.arrFactory);
+		var packedfileKey = mkeyEnc.pack(this.key);
 		// pack head
 		var head = this.packInfoToBytes();
 		// encrypt head with a file key

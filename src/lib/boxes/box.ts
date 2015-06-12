@@ -112,7 +112,7 @@ export module stream {
 	export var pack = sbox.pack;
 	export var open = sbox.open;
 }
-Object.freeze(exports.stream);
+Object.freeze(stream);
 
 export module formatWN {
 
@@ -177,7 +177,8 @@ export module formatWN {
 		if ('number' !== typeof delta) {
 			delta = 2;
 		}
-		var k = calc_dhshared_key(pk, sk);
+		if (!arrFactory) { arrFactory = arrays.makeFactory(); }
+		var k = calc_dhshared_key(pk, sk, arrFactory);
 		var enc = sbox.formatWN.makeEncryptor(k, nextNonce, delta, arrFactory);
 		arrFactory.wipe(k);
 		return enc;
@@ -193,14 +194,15 @@ export module formatWN {
 	 */
 	export function makeDecryptor(pk: Uint8Array, sk: Uint8Array,
 			arrFactory?: arrays.Factory): sbox.Decryptor {
-		var k = calc_dhshared_key(pk, sk)
+		if (!arrFactory) { arrFactory = arrays.makeFactory(); }
+		var k = calc_dhshared_key(pk, sk, arrFactory);
 		var enc = sbox.formatWN.makeDecryptor(k, arrFactory);
 		arrFactory.wipe(k);
 		return enc;
 	}
 	
 }
-Object.freeze(exports.formatWN);
+Object.freeze(formatWN);
 
 export var NONCE_LENGTH = 24;
 export var KEY_LENGTH = 32;

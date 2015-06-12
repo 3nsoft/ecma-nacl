@@ -121,7 +121,7 @@ var stream;
     stream.pack = sbox.pack;
     stream.open = sbox.open;
 })(stream = exports.stream || (exports.stream = {}));
-Object.freeze(exports.stream);
+Object.freeze(stream);
 var formatWN;
 (function (formatWN) {
     /**
@@ -184,7 +184,10 @@ var formatWN;
         if ('number' !== typeof delta) {
             delta = 2;
         }
-        var k = calc_dhshared_key(pk, sk);
+        if (!arrFactory) {
+            arrFactory = arrays.makeFactory();
+        }
+        var k = calc_dhshared_key(pk, sk, arrFactory);
         var enc = sbox.formatWN.makeEncryptor(k, nextNonce, delta, arrFactory);
         arrFactory.wipe(k);
         return enc;
@@ -199,14 +202,17 @@ var formatWN;
      * It is NaCl's secret box for a calculated DH-shared key.
      */
     function makeDecryptor(pk, sk, arrFactory) {
-        var k = calc_dhshared_key(pk, sk);
+        if (!arrFactory) {
+            arrFactory = arrays.makeFactory();
+        }
+        var k = calc_dhshared_key(pk, sk, arrFactory);
         var enc = sbox.formatWN.makeDecryptor(k, arrFactory);
         arrFactory.wipe(k);
         return enc;
     }
     formatWN.makeDecryptor = makeDecryptor;
 })(formatWN = exports.formatWN || (exports.formatWN = {}));
-Object.freeze(exports.formatWN);
+Object.freeze(formatWN);
 exports.NONCE_LENGTH = 24;
 exports.KEY_LENGTH = 32;
 exports.JWK_ALG_NAME = 'NaCl-box-CXSP';
@@ -1415,7 +1421,7 @@ var formatWN;
     }
     formatWN.makeDecryptor = makeDecryptor;
 })(formatWN = exports.formatWN || (exports.formatWN = {}));
-Object.freeze(exports.formatWN);
+Object.freeze(formatWN);
 exports.NONCE_LENGTH = 24;
 exports.KEY_LENGTH = 32;
 exports.POLY_LENGTH = 16;
@@ -1937,14 +1943,14 @@ var SegInfoHolder = (function () {
 /**
  * @param header is an array with header files. Array must contain only
  * header's bytes. Arrays's length is used to decide on how to process it.
- * @param masterKey
+ * @param mkeyDecr is a decryptor, based on a master key
  * @param arrFactory (optional)
  */
-function makeReader(header, masterKey, arrFactory) {
+function makeReader(header, mkeyDecr, arrFactory) {
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
     }
-    var reader = new SegReader(header, masterKey, arrFactory);
+    var reader = new SegReader(header, mkeyDecr, arrFactory);
     var wrap = {
         locationInSegments: reader.locationInSegments.bind(reader),
         openSeg: reader.openSeg.bind(reader),
@@ -1956,13 +1962,13 @@ function makeReader(header, masterKey, arrFactory) {
 exports.makeReader = makeReader;
 var SegReader = (function (_super) {
     __extends(SegReader, _super);
-    function SegReader(header, masterKey, arrFactory) {
+    function SegReader(header, mkeyDecr, arrFactory) {
         _super.call(this);
         this.arrFactory = arrFactory;
         if (header.length < 72) {
             throw new Error("Given header array is too short.");
         }
-        this.key = sbox.formatWN.open(header.subarray(0, 72), masterKey, this.arrFactory);
+        this.key = mkeyDecr.open(header.subarray(0, 72));
         header = header.subarray(72);
         if (header.length === 65) {
             this.initForEndlessFile(header, this.key, this.arrFactory);
@@ -2026,22 +2032,22 @@ exports.makeNewWriter = makeNewWriter;
 /**
  * @param header is an array with header files. Array must contain only
  * header's bytes. Arrays's length is used to decide on how to process it.
- * @param masterKey
+ * @param mkeyDecr is a decryptor, based on a master key
  * @param randomBytes is a function that produces cryptographically strong
  * random numbers (bytes).
  * @param arrFactory (optional)
  */
-function makeWriter(header, masterKey, randomBytes, arrFactory) {
+function makeWriter(header, mkeyDecr, randomBytes, arrFactory) {
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
     }
-    var writer = new SegWriter(header, masterKey, null, randomBytes, arrFactory);
+    var writer = new SegWriter(header, mkeyDecr, null, randomBytes, arrFactory);
     return makeWriterWrap(writer);
 }
 exports.makeWriter = makeWriter;
 var SegWriter = (function (_super) {
     __extends(SegWriter, _super);
-    function SegWriter(header, masterKey, segSizein256bs, randomBytes, arrFactory) {
+    function SegWriter(header, mkeyDecr, segSizein256bs, randomBytes, arrFactory) {
         _super.call(this);
         this.arrFactory = arrFactory;
         this.randomBytes = randomBytes;
@@ -2049,7 +2055,7 @@ var SegWriter = (function (_super) {
             if (header.length < 72) {
                 throw new Error("Given header array is too short.");
             }
-            this.key = sbox.formatWN.open(header.subarray(0, 72), masterKey, this.arrFactory);
+            this.key = mkeyDecr.open(header.subarray(0, 72));
             header = header.subarray(72);
             if (header.length === 65) {
                 this.initForEndlessFile(header, this.key, this.arrFactory);
@@ -2109,12 +2115,12 @@ var SegWriter = (function (_super) {
         this.segChains = null;
         this.arrFactory = null;
     };
-    SegWriter.prototype.packHeader = function (mKey) {
+    SegWriter.prototype.packHeader = function (mkeyEnc) {
         if (!this.headerModified) {
             new Error("Header has not been modified.");
         }
         // pack file key
-        var packedfileKey = sbox.formatWN.pack(this.key, this.randomBytes(24), mKey, this.arrFactory);
+        var packedfileKey = mkeyEnc.pack(this.key);
         // pack head
         var head = this.packInfoToBytes();
         // encrypt head with a file key
@@ -5581,8 +5587,8 @@ var hashing;
         sha512.makeHasher = sha512Mod.makeHasher;
     })(sha512 = hashing.sha512 || (hashing.sha512 = {}));
 })(hashing = exports.hashing || (exports.hashing = {}));
-Object.freeze(exports.hashing);
-Object.freeze(exports.hashing.sha512);
+Object.freeze(hashing);
+Object.freeze(hashing.sha512);
 var scryptMod = require('./scrypt/scrypt');
 exports.scrypt = scryptMod.scrypt;
 exports.arrays = require('./util/arrays');

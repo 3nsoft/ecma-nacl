@@ -457,10 +457,10 @@ declare module EcmaNacl.fileXSP.segments {
 	/**
 	 * @param header is an array with header files. Array must contain only
 	 * header's bytes. Arrays's length is used to decide on how to process it.
-	 * @param masterKey
+	 * @param mkeyDecr is a decryptor, based on a master key
 	 * @param arrFactory (optional)
 	 */
-	export function makeReader(header: Uint8Array, masterKey: Uint8Array, arrFactory?: arrays.Factory): SegmentsReader;
+	export function makeReader(header: Uint8Array, mkeyDecr: secret_box.Decryptor, arrFactory?: arrays.Factory): SegmentsReader;
 	export interface SegmentsWriter {
 		/**
 		 * @param pos is byte's position index in file content.
@@ -475,7 +475,7 @@ declare module EcmaNacl.fileXSP.segments {
 		 * This wipes file key and releases used resources.
 		 */
     	destroy(): void;
-	    packHeader(mKey: Uint8Array): Uint8Array;
+	    packHeader(mkeyEnc: secret_box.Encryptor): Uint8Array;
     	setContentLength(totalContentLen: number): void;
 	    isHeaderModified(): boolean;
     	splice(pos: number, rem: number, ins: number): any;
@@ -485,12 +485,12 @@ declare module EcmaNacl.fileXSP.segments {
 	/**
 	 * @param header is an array with header files. Array must contain only
 	 * header's bytes. Arrays's length is used to decide on how to process it.
-	 * @param masterKey
+	 * @param mkeyDecr is a decryptor, based on a master key
 	 * @param randomBytes is a function that produces cryptographically strong
 	 * random numbers (bytes).
 	 * @param arrFactory (optional)
 	 */
-	export function makeWriter(header: Uint8Array, masterKey: Uint8Array, randomBytes: (n: number) => Uint8Array, arrFactory?: arrays.Factory): SegmentsWriter;
+	export function makeWriter(header: Uint8Array, mkeyDecr: secret_box.Decryptor, randomBytes: (n: number) => Uint8Array, arrFactory?: arrays.Factory): SegmentsWriter;
 }
 
 declare module EcmaNacl.hashing.sha512 {

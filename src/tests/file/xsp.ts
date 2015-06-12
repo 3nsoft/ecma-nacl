@@ -24,6 +24,9 @@ function testSingleChainHeader(test: nu.Test,
 
 	var data = getRandom(dataLen);
 	var masterKey = getRandom(32);
+	var mkeyEncr = nacl.secret_box.formatWN.makeEncryptor(
+		masterKey, getRandom(24));
+	var mkeyDecr = nacl.secret_box.formatWN.makeDecryptor(masterKey);
 
 	// initialize writer
 	var writer = xsp.segments.makeNewWriter(segSizein256bs, getRandom);
@@ -33,7 +36,7 @@ function testSingleChainHeader(test: nu.Test,
 	test.ok(!writer.isEndlessFile());
 	
 	// pack file header
-	var fileHeader = writer.packHeader(masterKey);
+	var fileHeader = writer.packHeader(mkeyEncr);
 
 	// pack segments
 	var fileSegments: Uint8Array[] = [];
@@ -78,7 +81,7 @@ function testSingleChainHeader(test: nu.Test,
 	// read xsp file
 	var segsEnd = xsp.getXSPHeaderOffset(completeFile);
 	var reader = xsp.segments.makeReader(
-			completeFile.subarray(segsEnd), masterKey);
+			completeFile.subarray(segsEnd), mkeyDecr);
 	test.ok(!reader.isEndlessFile());
 	offset = xsp.SEGMENTS_OFFSET;
 	var segInd = 0;
@@ -118,6 +121,9 @@ function testEndlessFile(test: nu.Test,
 
 	var data = getRandom(dataLen);
 	var masterKey = getRandom(32);
+	var mkeyEncr = nacl.secret_box.formatWN.makeEncryptor(
+		masterKey, getRandom(24));
+	var mkeyDecr = nacl.secret_box.formatWN.makeDecryptor(masterKey);
 
 	// initialize writer
 	var writer = xsp.segments.makeNewWriter(segSizein256bs, getRandom);
@@ -125,7 +131,7 @@ function testEndlessFile(test: nu.Test,
 	test.ok(writer.isEndlessFile());
 	
 	// pack file header
-	var fileHeader = writer.packHeader(masterKey);
+	var fileHeader = writer.packHeader(mkeyEncr);
 
 	// pack segments
 	var fileSegments: Uint8Array[] = [];
@@ -170,7 +176,7 @@ function testEndlessFile(test: nu.Test,
 	// read xsp file (endless type)
 	var segsEnd = xsp.getXSPHeaderOffset(completeFile);
 	var reader = xsp.segments.makeReader(
-			completeFile.subarray(segsEnd), masterKey);
+			completeFile.subarray(segsEnd), mkeyDecr);
 	test.ok(reader.isEndlessFile());
 	offset = xsp.SEGMENTS_OFFSET;
 	var segInd = 0;

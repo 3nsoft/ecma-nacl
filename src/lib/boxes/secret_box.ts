@@ -369,7 +369,7 @@ export module formatWN {
 	}
 
 }
-Object.freeze(exports.formatWN);
+Object.freeze(formatWN);
 
 export var NONCE_LENGTH = 24;
 export var KEY_LENGTH = 32;

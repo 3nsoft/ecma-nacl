@@ -120,7 +120,7 @@ var stream;
     stream.pack = sbox.pack;
     stream.open = sbox.open;
 })(stream = exports.stream || (exports.stream = {}));
-Object.freeze(exports.stream);
+Object.freeze(stream);
 var formatWN;
 (function (formatWN) {
     /**
@@ -183,7 +183,10 @@ var formatWN;
         if ('number' !== typeof delta) {
             delta = 2;
         }
-        var k = calc_dhshared_key(pk, sk);
+        if (!arrFactory) {
+            arrFactory = arrays.makeFactory();
+        }
+        var k = calc_dhshared_key(pk, sk, arrFactory);
         var enc = sbox.formatWN.makeEncryptor(k, nextNonce, delta, arrFactory);
         arrFactory.wipe(k);
         return enc;
@@ -198,14 +201,17 @@ var formatWN;
      * It is NaCl's secret box for a calculated DH-shared key.
      */
     function makeDecryptor(pk, sk, arrFactory) {
-        var k = calc_dhshared_key(pk, sk);
+        if (!arrFactory) {
+            arrFactory = arrays.makeFactory();
+        }
+        var k = calc_dhshared_key(pk, sk, arrFactory);
         var enc = sbox.formatWN.makeDecryptor(k, arrFactory);
         arrFactory.wipe(k);
         return enc;
     }
     formatWN.makeDecryptor = makeDecryptor;
 })(formatWN = exports.formatWN || (exports.formatWN = {}));
-Object.freeze(exports.formatWN);
+Object.freeze(formatWN);
 exports.NONCE_LENGTH = 24;
 exports.KEY_LENGTH = 32;
 exports.JWK_ALG_NAME = 'NaCl-box-CXSP';

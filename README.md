@@ -196,7 +196,7 @@ Bob's side:
 // get nonce from Alice's first message, advance it oddly, and
 // use for encryptor, as encryptors on both sides advance nonces evenly
 var nonce = nacl.box.formatWN.copyNonceFrom(cipher1_from_alice);
-nacl.advanceNonceOddly(nonce);
+nacl.nonce.advanceOddly(nonce);
 
 // make encryptor to produce with-nonce format (default delta is two)
 var encryptor = nacl.box.formatWN.makeEncryptor(alice_pkey, bob_skey, nonce);
@@ -243,8 +243,9 @@ So, you should obtain cryptographically strong random bytes yourself. In node, t
 
 Scrypt derives a key from users password.
 Algorithm is memory-hard, which means it uses lots and lots of memory.
-There are three parameters that go into derivation: ``` N, r```
-and ``` p```.
+There are three parameters that go into derivation: ``` N```,
+``` r``` and
+``` p```.
 
 Amount of memory used is roughly ``` 128 * N * r == r * 2^(7+logN)``` bytes.
 With ``` r = 8```,
@@ -364,8 +365,11 @@ Packing segments and header:
 // new file writer needs segment size and a function to get random bytes
 var writer = xsp.segments.makeNewWriter(segSizein256bs, getRandom);
 
+// file has its own key, which is encrypted by a master key encryptor
+var masterKeyEncr = nacl.secret_box.formatWN.makeEncryptor(masterKey, someNonce);
+
 // header is produced by
-var header = writer.packHeader(masterKey);
+var header = writer.packHeader(masterKeyEncr);
 
 // segments are packed with
 var sInfo = writer.packSeg(content, segInd);
@@ -375,8 +379,9 @@ var sInfo = writer.packSeg(content, segInd);
 // initial endless file can be set to be finite, this changes header information
 writer.setContentLength(contentLen);
 
-// writer of existing file should read existing header
-var writer = xsp.segments.makeWriter(header, masterKey, getRandom);
+// writer of existing file should read existing header with master key's decryptor
+var masterKeyDecr = nacl.secret_box.formatWN.makeDecryptor(masterKey);
+var writer = xsp.segments.makeWriter(header, masterKeyDecr, getRandom);
 
 // writer should be destroyed, when no longer needed
 writer.destroy();
@@ -388,7 +393,7 @@ For now, users are advised to be careful, and to pack each segment only once.
 
 Reader is used for reading:
 ```javascript
-var reader = xsp.segments.makeReader(header, masterKey);
+var reader = xsp.segments.makeReader(header, masterKeyDecr);
 
 var dInfo = reader.openSeg(seg, segInd);
 // where dInfo.segLen is a number of segment files read,
