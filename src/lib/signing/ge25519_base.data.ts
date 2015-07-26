@@ -887,8 +887,8 @@ export var base_multiples_affine = new Array<ge25519_aff>(425);
 	var arrFact = arrays.makeFactory();
 	for (var i=0; i<425; i+=1) {
 		base_multiples_affine[i] = make_ge25519_aff(arrFact);
-		base_multiples_affine[i].x.set(init_data[i][0]);
-		base_multiples_affine[i].y.set(init_data[i][1]);
+		base_multiples_affine[i].x.set(<any> init_data[i][0]);
+		base_multiples_affine[i].y.set(<any> init_data[i][1]);
 	}
 	init_data = null;
 })();

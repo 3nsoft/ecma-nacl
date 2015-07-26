@@ -343,7 +343,7 @@ Header layout:
 
  * Total segments length, is just that. It excludes header and other file elements.
  * Total segments length is encoded little-endian way into 5 bytes, allowing up to 2^40-1 bytes, or 1TB - 1byte.
- * Content length is equal to total segments length minus 16*s, where s is a total number of segments (16 bytes is poly's code length).
+ * Content length is equal to total segments length minus 16*n, where n is a total number of segments (16 bytes is poly's code length).
 
 Segment chain bytes look as following:
 
@@ -360,16 +360,22 @@ There is a sub-module, with XSP-related functionality:
 var xsp = nacl.fileXSP;
 ```
 
+Start work with any file by creating an object that holds file key, and, therefore, can generate correct readera and writers.
+```javascript
+// for a new file, the following generates new file key, contained in the holder
+var fkeyHolder = xsp.makeNewFileKeyHolder(mkeyEncr, getRandom);
+
+// existing file has its key packed in its header, which should be used
+var fkeyHolder = xsp.makeFileKeyHolder(mkeyDecr, header);
+```
+
 Packing segments and header:  
 ```javascript
 // new file writer needs segment size and a function to get random bytes
-var writer = xsp.segments.makeNewWriter(segSizein256bs, getRandom);
+var writer = fkeyHolder.newSegWriter(segSizein256bs, getRandom);
 
-// file has its own key, which is encrypted by a master key encryptor
-var masterKeyEncr = nacl.secret_box.formatWN.makeEncryptor(masterKey, someNonce);
-
-// header is produced by
-var header = writer.packHeader(masterKeyEncr);
+// header is produced by the following call
+var header = writer.packHeader();
 
 // segments are packed with
 var sInfo = writer.packSeg(content, segInd);
@@ -379,15 +385,14 @@ var sInfo = writer.packSeg(content, segInd);
 // initial endless file can be set to be finite, this changes header information
 writer.setContentLength(contentLen);
 
-// writer of existing file should read existing header with master key's decryptor
-var masterKeyDecr = nacl.secret_box.formatWN.makeDecryptor(masterKey);
-var writer = xsp.segments.makeWriter(header, masterKeyDecr, getRandom);
+// writer of existing file should read existing header
+var writer = xsp.segments.makeWriter(header, getRandom);
 
 // writer should be destroyed, when no longer needed
 writer.destroy();
 ```
 
-Currently, at version 2.0.0, efficient splicing functionality is not implemented, but it shall exist, as file format allows for it.
+Currently, at version 2.2.0, efficient splicing functionality is not implemented, but it shall exist, as file format allows for it.
 We also plan to add some fool-proof restrictions into implementation to disallow packing the same segment twice.
 For now, users are advised to be careful, and to pack each segment only once.
 

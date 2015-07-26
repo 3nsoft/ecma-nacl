@@ -7,19 +7,19 @@ var auth = require('./onetimeauth');
 var arrays = require('../util/arrays');
 var nonceUtils = require('../util/nonce');
 function checkPackArgs(m, n, k) {
-    if (m.BYTES_PER_ELEMENT !== 1) {
+    if (!(m instanceof Uint8Array)) {
         throw new TypeError("Message array m must be Uint8Array.");
     }
     if (m.length === 0) {
         throw new Error("Message array should have at least one byte.");
     }
-    if (n.BYTES_PER_ELEMENT !== 1) {
+    if (!(n instanceof Uint8Array)) {
         throw new TypeError("Nonce array n must be Uint8Array.");
     }
     if (n.length !== 24) {
         throw new Error("Nonce array n should have 24 elements (bytes) in it, but it is " + n.length + " elements long.");
     }
-    if (k.BYTES_PER_ELEMENT !== 1) {
+    if (!(k instanceof Uint8Array)) {
         throw new TypeError("Key array k must be Uint8Array.");
     }
     if (k.length !== 32) {
@@ -86,19 +86,19 @@ exports.pack = pack;
  * Array is a view of buffer, which has 32 zeros preceding message bytes.
  */
 function open(c, n, k, arrFactory) {
-    if (c.BYTES_PER_ELEMENT !== 1) {
+    if (!(c instanceof Uint8Array)) {
         throw new TypeError("Cipher array c must be Uint8Array.");
     }
     if (c.length < 17) {
         throw new Error("Cipher array c should have at least 17 elements (bytes) in it, but is only " + c.length + " elements long.");
     }
-    if (n.BYTES_PER_ELEMENT !== 1) {
+    if (!(n instanceof Uint8Array)) {
         throw new TypeError("Nonce array n must be Uint8Array.");
     }
     if (n.length !== 24) {
         throw new Error("Nonce array n should have 24 elements (bytes) in it, but it is " + n.length + " elements long.");
     }
-    if (k.BYTES_PER_ELEMENT !== 1) {
+    if (!(k instanceof Uint8Array)) {
         throw new TypeError("Key array k must be Uint8Array.");
     }
     if (k.length !== 32) {
@@ -219,13 +219,13 @@ var formatWN;
      * It is NaCl's secret box for a given key, with automatically evenly advancing nonce.
      */
     function makeEncryptor(key, nextNonce, delta, arrFactory) {
-        if (nextNonce.BYTES_PER_ELEMENT !== 1) {
+        if (!(nextNonce instanceof Uint8Array)) {
             throw new TypeError("Nonce array nextNonce must be Uint8Array.");
         }
         if (nextNonce.length !== 24) {
             throw new Error("Nonce array nextNonce should have 24 elements (bytes) in it, but it is " + nextNonce.length + " elements long.");
         }
-        if (key.BYTES_PER_ELEMENT !== 1) {
+        if (!(key instanceof Uint8Array)) {
             throw new TypeError("Key array key must be Uint8Array.");
         }
         if (key.length !== 32) {
@@ -285,7 +285,7 @@ var formatWN;
      * @return a frozen object with pack & open and destroy functions.
      */
     function makeDecryptor(key, arrFactory) {
-        if (key.BYTES_PER_ELEMENT !== 1) {
+        if (!(key instanceof Uint8Array)) {
             throw new TypeError("Key array key must be Uint8Array.");
         }
         if (key.length !== 32) {

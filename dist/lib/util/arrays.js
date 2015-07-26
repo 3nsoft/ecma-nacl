@@ -134,10 +134,10 @@ var ArrFactory = (function () {
             if ((arr.byteOffset !== 0) || (arr.length * arr.BYTES_PER_ELEMENT !== arr.buffer.byteLength)) {
                 throw new TypeError("Given, as argument #" + (i + 1) + " is a view " + "of an array, and these are not supposed to be recycled.");
             }
-            if (arr.BYTES_PER_ELEMENT === 1) {
+            if (arr instanceof Uint8Array) {
                 this.recycleUint8Array(arr);
             }
-            else if (arr.BYTES_PER_ELEMENT === 4) {
+            else if (arr instanceof Uint32Array) {
                 this.recycleUint32Array(arr);
             }
             else {

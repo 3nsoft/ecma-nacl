@@ -401,9 +401,6 @@ declare module EcmaNacl.fileXSP {
 	 */
 	export function generateXSPFileStart(segsLen: number): Uint8Array;
 	export function getXSPHeaderOffset(xspBytes: Uint8Array): number;
-}
-
-declare module EcmaNacl.fileXSP.segments {
 	export interface LocationInSegment {
 		/**
 		 * Is a position in a decrypted content of a segment.
@@ -453,14 +450,11 @@ declare module EcmaNacl.fileXSP.segments {
 		 */
 	    destroy(): void;
     	isEndlessFile(): boolean;
+		contentLength(): number;
+		segmentsLength(): number;
+		segmentSize(segInd: number): number;
+		numberOfSegments(): number;
 	}
-	/**
-	 * @param header is an array with header files. Array must contain only
-	 * header's bytes. Arrays's length is used to decide on how to process it.
-	 * @param mkeyDecr is a decryptor, based on a master key
-	 * @param arrFactory (optional)
-	 */
-	export function makeReader(header: Uint8Array, mkeyDecr: secret_box.Decryptor, arrFactory?: arrays.Factory): SegmentsReader;
 	export interface SegmentsWriter {
 		/**
 		 * @param pos is byte's position index in file content.
@@ -475,22 +469,79 @@ declare module EcmaNacl.fileXSP.segments {
 		 * This wipes file key and releases used resources.
 		 */
     	destroy(): void;
-	    packHeader(mkeyEnc: secret_box.Encryptor): Uint8Array;
+		/**
+		 * This resets writer's internal state, keeping a file key, and removes info
+		 * about segment chains, total length, etc.
+		 * This allows for 100% fresh write of segments with the same file key, and
+		 * same default segment size.
+		 */
+		reset(): void;
+	    packHeader(mkeyEnc?: secret_box.Encryptor): Uint8Array;
     	setContentLength(totalContentLen: number): void;
 	    isHeaderModified(): boolean;
     	splice(pos: number, rem: number, ins: number): any;
 	    isEndlessFile(): boolean;
+		contentLength(): number;
+		segmentsLength(): number;
+		segmentSize(segInd: number): number;
+		numberOfSegments(): number;
 	}
-	export function makeNewWriter(segSizein256bs: number, randomBytes: (n: number) => Uint8Array, arrFactory?: arrays.Factory): SegmentsWriter;
+	export interface FileKeyHolder {
+		/**
+		 * @param segSizein256bs is a default segment size in 256-byte blocks
+		 * @param randomBytes is a function that produces cryptographically strong
+		 * random numbers (bytes).
+		 * @return segments writer either for a new file, or for a complete
+		 * replacement of existing file's bytes.
+		 */
+		newSegWriter(segSizein256bs: number,
+			randomBytes: (n: number) => Uint8Array): SegmentsWriter;
+		
+		/**
+		 * @param header is an array with file's header. Array must contain only
+		 * header's bytes, as its length is used to decide how to process it.
+		 * @param randomBytes is a function that produces cryptographically strong
+		 * random numbers (bytes).
+		 * @return segments writer for changing existing file.
+		 */
+		segWriter(header: Uint8Array, randomBytes: (n: number) => Uint8Array):
+			SegmentsWriter;
+		
+		/**
+		 * @param header is an array with file's header. Array must contain only
+		 * header's bytes, as its length is used to decide how to process it.
+		 * @return segment reader
+		 */
+		segReader(header: Uint8Array): SegmentsReader;
+		
+		/**
+		 * This wipes file key and releases used resources.
+		 */
+		destroy(): void;
+		
+		/**
+		 * @param (optional) array factory for use by cloned key holder.
+		 * @return creates a clone of this key holder, cloning key and all internals.
+		 */
+		clone(arrFactory?: arrays.Factory): FileKeyHolder;
+		
+	}
 	/**
-	 * @param header is an array with header files. Array must contain only
-	 * header's bytes. Arrays's length is used to decide on how to process it.
-	 * @param mkeyDecr is a decryptor, based on a master key
+	 * @param mkeyEncr master key encryptor, which is used to make file key pack.
 	 * @param randomBytes is a function that produces cryptographically strong
 	 * random numbers (bytes).
-	 * @param arrFactory (optional)
+	 * @param arrFactory (optional) array factory
+	 * @return file key holder with a newly generated key.
 	 */
-	export function makeWriter(header: Uint8Array, mkeyDecr: secret_box.Decryptor, randomBytes: (n: number) => Uint8Array, arrFactory?: arrays.Factory): SegmentsWriter;
+	export function makeNewFileKeyHolder(mkeyEncr: secret_box.Encryptor, randomBytes: (n: number) => Uint8Array, arrFactory?: arrays.Factory): FileKeyHolder;
+	/**
+	 * @param mkeyDecr master key decryptor, which is used to open file key.
+	 * @param header is an array with file's header. Array can be smaller than whole
+	 * header, but it must contain initial file key pack.
+	 * @param arrFactory (optional) array factory
+	 * @return file key holder with a key, extracted from a given header.
+	 */
+	export function makeFileKeyHolder(mkeyDecr: secret_box.Decryptor, header: Uint8Array, arrFactory?: arrays.Factory): FileKeyHolder;
 }
 
 declare module EcmaNacl.hashing.sha512 {

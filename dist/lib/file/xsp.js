@@ -2,7 +2,9 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
-exports.segments = require('./xsp-segments');
+var arrays = require('../util/arrays');
+var sbox = require('../boxes/secret_box');
+var segments = require('./xsp-segments');
 function asciiToUint8Array(str) {
     var arr = new Uint8Array(str.length);
     for (var i = 0; i < str.length; i += 1) {
@@ -87,4 +89,79 @@ function getXSPHeaderOffset(xspBytes) {
     return loadUintFrom8Bytes(xspBytes, fileStartLen);
 }
 exports.getXSPHeaderOffset = getXSPHeaderOffset;
+var KEY_PACK_LENGTH = 72;
+var KeyHolder = (function () {
+    function KeyHolder(key, keyPack, arrFactory) {
+        this.key = key;
+        this.keyPack = keyPack;
+        this.arrFactory = (arrFactory ? arrFactory : arrays.makeFactory());
+    }
+    KeyHolder.prototype.newSegWriter = function (segSizein256bs, randomBytes) {
+        var writer = new segments.SegWriter(this.key, this.keyPack, null, segSizein256bs, randomBytes, this.arrFactory);
+        return writer.wrap();
+    };
+    KeyHolder.prototype.segWriter = function (header, randomBytes) {
+        var writer = new segments.SegWriter(this.key, new Uint8Array(header.subarray(0, KEY_PACK_LENGTH)), header.subarray(KEY_PACK_LENGTH), null, randomBytes, this.arrFactory);
+        return writer.wrap();
+    };
+    KeyHolder.prototype.segReader = function (header) {
+        var reader = new segments.SegReader(this.key, header, this.arrFactory);
+        return reader.wrap();
+    };
+    KeyHolder.prototype.destroy = function () {
+        if (this.key) {
+            arrays.wipe(this.key);
+            this.key = null;
+        }
+        this.keyPack = null;
+        if (this.arrFactory) {
+            this.arrFactory.wipeRecycled();
+            this.arrFactory = null;
+        }
+    };
+    KeyHolder.prototype.wrap = function () {
+        var wrap = {
+            destroy: this.destroy.bind(this),
+            newSegWriter: this.newSegWriter.bind(this),
+            segWriter: this.segWriter.bind(this),
+            segReader: this.segReader.bind(this),
+            clone: this.clone.bind(this)
+        };
+        Object.freeze(wrap);
+        return wrap;
+    };
+    KeyHolder.prototype.clone = function (arrFactory) {
+        var kh = new KeyHolder(this.key, this.keyPack, arrFactory);
+        return kh.wrap();
+    };
+    return KeyHolder;
+})();
+/**
+ * @param mkeyEncr master key encryptor, which is used to make file key pack.
+ * @param randomBytes is a function that produces cryptographically strong
+ * random numbers (bytes).
+ * @param arrFactory (optional) array factory
+ * @return file key holder with a newly generated key.
+ */
+function makeNewFileKeyHolder(mkeyEncr, randomBytes, arrFactory) {
+    var fileKey = randomBytes(sbox.KEY_LENGTH);
+    var fileKeyPack = mkeyEncr.pack(fileKey);
+    var kh = new KeyHolder(fileKey, fileKeyPack, arrFactory);
+    return kh.wrap();
+}
+exports.makeNewFileKeyHolder = makeNewFileKeyHolder;
+/**
+ * @param mkeyDecr master key decryptor, which is used to open file key.
+ * @param header is an array with file's header. Array can be smaller than whole
+ * header, but it must contain initial file key pack.
+ * @param arrFactory (optional) array factory
+ * @return file key holder with a key, extracted from a given header.
+ */
+function makeFileKeyHolder(mkeyDecr, header, arrFactory) {
+    var fileKeyPack = new Uint8Array(header.subarray(0, KEY_PACK_LENGTH));
+    var fileKey = mkeyDecr.open(fileKeyPack);
+    var kh = new KeyHolder(fileKey, fileKeyPack, arrFactory);
+    return kh.wrap();
+}
+exports.makeFileKeyHolder = makeFileKeyHolder;
 Object.freeze(exports);

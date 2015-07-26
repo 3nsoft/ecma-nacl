@@ -75,12 +75,11 @@ function squeeze(a: Uint32Array): void {
 
 /**
  * minusp array in crypto_scalarmult/curve25519/ref/smult.c
+ * Length === 32.
  */
-var minusp = new Uint32Array(32);
-minusp.set([ 19, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 128 ]);
+var minusp = new Uint32Array(
+	[ 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128 ]);
 
 /**
  * Analog of freeze in crypto_scalarmult/curve25519/ref/smult.c

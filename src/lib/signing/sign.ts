@@ -27,7 +27,7 @@ export interface Keypair {
  */
 export function generate_keypair(seed: Uint8Array,
 		arrFactory?: arrays.Factory): Keypair {
-	if (seed.BYTES_PER_ELEMENT !== 1) { throw new TypeError(
+	if (!(seed instanceof Uint8Array)) { throw new TypeError(
 			"Seed must be Uint8Array."); }
 	if (seed.length !== 32) { throw new Error("Seed should have 32 "+
 			"elements (bytes) in it, but it is "+seed.length+
@@ -84,7 +84,7 @@ export function extract_pkey(sk: Uint8Array): Uint8Array {
  */
 export function sign(m: Uint8Array, sk: Uint8Array,
 		arrFactory?: arrays.Factory): Uint8Array {
-	if (sk.BYTES_PER_ELEMENT !== 1) { throw new TypeError(
+	if (!(sk instanceof Uint8Array)) { throw new TypeError(
 			"Key array sk must be Uint8Array."); }
 	if (sk.length !== 64) { throw new Error("Key array sk should have 64 "+
 			"elements (bytes) in it, but it is "+sk.length+" elements long."); }
@@ -120,7 +120,7 @@ export function sign(m: Uint8Array, sk: Uint8Array,
 	ge.pack(sm.subarray(0, 32), ger, arrFactory);
 	/* sm: 32-byte R, 32-byte z, mlen-byte m */
 	
-	sm.subarray(32, 64).set(pk);
+	sm.set(pk, 32);
 	/* sm: 32-byte R, 32-byte A, mlen-byte m */
 
 	var hram = sha512.hash(sm, arrFactory);
@@ -143,7 +143,7 @@ export function sign(m: Uint8Array, sk: Uint8Array,
 
 export function signature(m: Uint8Array, sk: Uint8Array,
 		arrFactory?: arrays.Factory): Uint8Array {
-	if (sk.BYTES_PER_ELEMENT !== 1) { throw new TypeError(
+	if (!(sk instanceof Uint8Array)) { throw new TypeError(
 			"Key array sk must be Uint8Array."); }
 	if (sk.length !== 64) { throw new Error("Key array sk should have 64 "+
 			"elements (bytes) in it, but it is "+sk.length+" elements long."); }
@@ -209,7 +209,7 @@ export function signature(m: Uint8Array, sk: Uint8Array,
  */
 export function open(sm: Uint8Array, pk: Uint8Array,
 		arrFactory?: arrays.Factory): Uint8Array {
-	if (pk.BYTES_PER_ELEMENT !== 1) { throw new TypeError(
+	if (!(pk instanceof Uint8Array)) { throw new TypeError(
 			"Key array pk must be Uint8Array."); }
 	if (pk.length !== 32) { throw new Error("Key array pk should have 32 "+
 			"elements (bytes) in it, but it is "+pk.length+" elements long."); }
@@ -232,7 +232,7 @@ export function open(sm: Uint8Array, pk: Uint8Array,
 
 	var m = new Uint8Array(sm.length);
 	m.set(sm);
-	m.subarray(32, 64).set(pk);
+	m.set(pk, 32);
 	var hram = sha512.hash(m,arrFactory);
 
 	sc.from64bytes(schram, hram, arrFactory);
@@ -252,7 +252,7 @@ export function open(sm: Uint8Array, pk: Uint8Array,
 
 export function verify(sig: Uint8Array, m: Uint8Array, pk: Uint8Array,
 		arrFactory?: arrays.Factory): boolean {
-	if (pk.BYTES_PER_ELEMENT !== 1) { throw new TypeError(
+	if (!(pk instanceof Uint8Array)) { throw new TypeError(
 			"Key array pk must be Uint8Array."); }
 	if (pk.length !== 32) { throw new Error("Key array pk should have 32 "+
 			"elements (bytes) in it, but it is "+pk.length+" elements long."); }

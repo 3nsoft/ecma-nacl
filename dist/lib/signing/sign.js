@@ -11,7 +11,7 @@ var vectVerify = require('../util/verify');
  * Analog of crypto_sign_keypair in crypto_sign/ed25519/ref/keypair.c
  */
 function generate_keypair(seed, arrFactory) {
-    if (seed.BYTES_PER_ELEMENT !== 1) {
+    if (!(seed instanceof Uint8Array)) {
         throw new TypeError("Seed must be Uint8Array.");
     }
     if (seed.length !== 32) {
@@ -62,7 +62,7 @@ exports.extract_pkey = extract_pkey;
  * Analog of crypto_sign in crypto_sign/ed25519/ref/sign.c
  */
 function sign(m, sk, arrFactory) {
-    if (sk.BYTES_PER_ELEMENT !== 1) {
+    if (!(sk instanceof Uint8Array)) {
         throw new TypeError("Key array sk must be Uint8Array.");
     }
     if (sk.length !== 64) {
@@ -93,7 +93,7 @@ function sign(m, sk, arrFactory) {
     ge.scalarmult_base(ger, sck, arrFactory);
     ge.pack(sm.subarray(0, 32), ger, arrFactory);
     /* sm: 32-byte R, 32-byte z, mlen-byte m */
-    sm.subarray(32, 64).set(pk);
+    sm.set(pk, 32);
     /* sm: 32-byte R, 32-byte A, mlen-byte m */
     var hram = sha512.hash(sm, arrFactory);
     /* hram: 64-byte H(R,A,m) */
@@ -110,7 +110,7 @@ function sign(m, sk, arrFactory) {
 }
 exports.sign = sign;
 function signature(m, sk, arrFactory) {
-    if (sk.BYTES_PER_ELEMENT !== 1) {
+    if (!(sk instanceof Uint8Array)) {
         throw new TypeError("Key array sk must be Uint8Array.");
     }
     if (sk.length !== 64) {
@@ -166,7 +166,7 @@ exports.signature = signature;
  * Analog of crypto_sign_open in crypto_sign/ed25519/ref/open.c
  */
 function open(sm, pk, arrFactory) {
-    if (pk.BYTES_PER_ELEMENT !== 1) {
+    if (!(pk instanceof Uint8Array)) {
         throw new TypeError("Key array pk must be Uint8Array.");
     }
     if (pk.length !== 32) {
@@ -188,7 +188,7 @@ function open(sm, pk, arrFactory) {
     sc.from32bytes(scs, sm.subarray(32, 64), arrFactory);
     var m = new Uint8Array(sm.length);
     m.set(sm);
-    m.subarray(32, 64).set(pk);
+    m.set(pk, 32);
     var hram = sha512.hash(m, arrFactory);
     sc.from64bytes(schram, hram, arrFactory);
     ge.double_scalarmult_vartime(get2, get1, schram, ge.base, scs, arrFactory);
@@ -204,7 +204,7 @@ function open(sm, pk, arrFactory) {
 }
 exports.open = open;
 function verify(sig, m, pk, arrFactory) {
-    if (pk.BYTES_PER_ELEMENT !== 1) {
+    if (!(pk instanceof Uint8Array)) {
         throw new TypeError("Key array pk must be Uint8Array.");
     }
     if (pk.length !== 32) {

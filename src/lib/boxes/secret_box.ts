@@ -9,13 +9,13 @@ import arrays = require('../util/arrays');
 import nonceUtils = require('../util/nonce');
 
 function checkPackArgs(m: Uint8Array, n: Uint8Array, k: Uint8Array): void {
-	if (m.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Message array m must be Uint8Array."); }
+	if (!(m instanceof Uint8Array)) { throw new TypeError("Message array m must be Uint8Array."); }
 	if (m.length === 0) { throw new Error("Message array should have at least one byte."); }
-	if (n.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Nonce array n must be Uint8Array."); }
+	if (!(n instanceof Uint8Array)) { throw new TypeError("Nonce array n must be Uint8Array."); }
 	if (n.length !== 24) { throw new Error(
 			"Nonce array n should have 24 elements (bytes) in it, but it is "+
 			n.length+" elements long."); }
-	if (k.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Key array k must be Uint8Array."); }
+	if (!(k instanceof Uint8Array)) { throw new TypeError("Key array k must be Uint8Array."); }
 	if (k.length !== 32) { throw new Error(
 			"Key array k should have 32 elements (bytes) in it, but it is "+
 			k.length+" elements long."); }
@@ -94,15 +94,15 @@ export function pack(m: Uint8Array, n: Uint8Array, k: Uint8Array,
 export function open(c: Uint8Array, n: Uint8Array,
 		k: Uint8Array, arrFactory?: arrays.Factory): Uint8Array {
 	
-	if (c.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Cipher array c must be Uint8Array."); }
+	if (!(c instanceof Uint8Array)) { throw new TypeError("Cipher array c must be Uint8Array."); }
 	if (c.length < 17) { throw new Error(
 			"Cipher array c should have at least 17 elements (bytes) in it, but is only "+
 			c.length+" elements long."); }
-	if (n.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Nonce array n must be Uint8Array."); }
+	if (!(n instanceof Uint8Array)) { throw new TypeError("Nonce array n must be Uint8Array."); }
 	if (n.length !== 24) { throw new Error(
 			"Nonce array n should have 24 elements (bytes) in it, but it is "+
 			n.length+" elements long."); }
-	if (k.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Key array k must be Uint8Array."); }
+	if (!(k instanceof Uint8Array)) { throw new TypeError("Key array k must be Uint8Array."); }
 	if (k.length !== 32) { throw new Error(
 			"Key array k should have 32 elements (bytes) in it, but it is "+
 			k.length+" elements long."); }
@@ -275,11 +275,11 @@ export module formatWN {
 	 */
 	export function makeEncryptor(key: Uint8Array, nextNonce: Uint8Array,
 			delta?: number, arrFactory?: arrays.Factory): Encryptor {
-		if (nextNonce.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Nonce array nextNonce must be Uint8Array."); }
+		if (!(nextNonce instanceof Uint8Array)) { throw new TypeError("Nonce array nextNonce must be Uint8Array."); }
 		if (nextNonce.length !== 24) { throw new Error(
 				"Nonce array nextNonce should have 24 elements (bytes) in it, but it is "+
 				nextNonce.length+" elements long."); }
-		if (key.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Key array key must be Uint8Array."); }
+		if (!(key instanceof Uint8Array)) { throw new TypeError("Key array key must be Uint8Array."); }
 		if (key.length !== 32) { throw new Error(
 				"Key array key should have 32 elements (bytes) in it, but it is "+
 				key.length+" elements long."); }
@@ -337,7 +337,7 @@ export module formatWN {
 	 */
 	export function makeDecryptor(key: Uint8Array,
 			arrFactory?: arrays.Factory): Decryptor {
-		if (key.BYTES_PER_ELEMENT !== 1) { throw new TypeError(
+		if (!(key instanceof Uint8Array)) { throw new TypeError(
 				"Key array key must be Uint8Array."); }
 		if (key.length !== 32) { throw new Error(
 				"Key array key should have 32 elements (bytes) in it, but it is "+

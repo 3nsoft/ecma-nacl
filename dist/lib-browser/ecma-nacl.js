@@ -21,7 +21,7 @@ var SIGMA = streamMod.SIGMA;
  * secret key.
  */
 function generate_pubkey(sk, arrFactory) {
-    if (sk.BYTES_PER_ELEMENT !== 1) {
+    if (!(sk instanceof Uint8Array)) {
         throw new TypeError("Key array k must be Uint8Array.");
     }
     if (sk.length !== 32) {
@@ -51,13 +51,13 @@ var n_to_calc_dhshared_key = new Uint8Array(16);
  * public and secret keys.
  */
 function calc_dhshared_key(pk, sk, arrFactory) {
-    if (pk.BYTES_PER_ELEMENT !== 1) {
+    if (!(pk instanceof Uint8Array)) {
         throw new TypeError("Public key array pk must be Uint8Array.");
     }
     if (pk.length !== 32) {
         throw new Error("Public key array pk should have 32 elements (bytes) in it, but it is " + pk.length + " elements long.");
     }
-    if (sk.BYTES_PER_ELEMENT !== 1) {
+    if (!(sk instanceof Uint8Array)) {
         throw new TypeError("Secret key array sk must be Uint8Array.");
     }
     if (sk.length !== 32) {
@@ -602,9 +602,9 @@ function squeeze(h) {
 }
 /**
  * minusp array in crypto_onetimeauth/poly1305/ref/auth.c
+ * Length === 17.
  */
-var minusp = new Uint32Array(17);
-minusp.set([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252]);
+var minusp = new Uint32Array([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252]);
 /**
  * Analog of freeze in crypto_onetimeauth/poly1305/ref/auth.c
  * @param h is array of 17 uint32's.
@@ -792,9 +792,9 @@ function squeeze(a) {
 }
 /**
  * minusp array in crypto_scalarmult/curve25519/ref/smult.c
+ * Length === 32.
  */
-var minusp = new Uint32Array(32);
-minusp.set([19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128]);
+var minusp = new Uint32Array([19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128]);
 /**
  * Analog of freeze in crypto_scalarmult/curve25519/ref/smult.c
  * @param a is Uint32Array, 32 items long.
@@ -1110,19 +1110,19 @@ var auth = require('./onetimeauth');
 var arrays = require('../util/arrays');
 var nonceUtils = require('../util/nonce');
 function checkPackArgs(m, n, k) {
-    if (m.BYTES_PER_ELEMENT !== 1) {
+    if (!(m instanceof Uint8Array)) {
         throw new TypeError("Message array m must be Uint8Array.");
     }
     if (m.length === 0) {
         throw new Error("Message array should have at least one byte.");
     }
-    if (n.BYTES_PER_ELEMENT !== 1) {
+    if (!(n instanceof Uint8Array)) {
         throw new TypeError("Nonce array n must be Uint8Array.");
     }
     if (n.length !== 24) {
         throw new Error("Nonce array n should have 24 elements (bytes) in it, but it is " + n.length + " elements long.");
     }
-    if (k.BYTES_PER_ELEMENT !== 1) {
+    if (!(k instanceof Uint8Array)) {
         throw new TypeError("Key array k must be Uint8Array.");
     }
     if (k.length !== 32) {
@@ -1189,19 +1189,19 @@ exports.pack = pack;
  * Array is a view of buffer, which has 32 zeros preceding message bytes.
  */
 function open(c, n, k, arrFactory) {
-    if (c.BYTES_PER_ELEMENT !== 1) {
+    if (!(c instanceof Uint8Array)) {
         throw new TypeError("Cipher array c must be Uint8Array.");
     }
     if (c.length < 17) {
         throw new Error("Cipher array c should have at least 17 elements (bytes) in it, but is only " + c.length + " elements long.");
     }
-    if (n.BYTES_PER_ELEMENT !== 1) {
+    if (!(n instanceof Uint8Array)) {
         throw new TypeError("Nonce array n must be Uint8Array.");
     }
     if (n.length !== 24) {
         throw new Error("Nonce array n should have 24 elements (bytes) in it, but it is " + n.length + " elements long.");
     }
-    if (k.BYTES_PER_ELEMENT !== 1) {
+    if (!(k instanceof Uint8Array)) {
         throw new TypeError("Key array k must be Uint8Array.");
     }
     if (k.length !== 32) {
@@ -1322,13 +1322,13 @@ var formatWN;
      * It is NaCl's secret box for a given key, with automatically evenly advancing nonce.
      */
     function makeEncryptor(key, nextNonce, delta, arrFactory) {
-        if (nextNonce.BYTES_PER_ELEMENT !== 1) {
+        if (!(nextNonce instanceof Uint8Array)) {
             throw new TypeError("Nonce array nextNonce must be Uint8Array.");
         }
         if (nextNonce.length !== 24) {
             throw new Error("Nonce array nextNonce should have 24 elements (bytes) in it, but it is " + nextNonce.length + " elements long.");
         }
-        if (key.BYTES_PER_ELEMENT !== 1) {
+        if (!(key instanceof Uint8Array)) {
             throw new TypeError("Key array key must be Uint8Array.");
         }
         if (key.length !== 32) {
@@ -1388,7 +1388,7 @@ var formatWN;
      * @return a frozen object with pack & open and destroy functions.
      */
     function makeDecryptor(key, arrFactory) {
-        if (key.BYTES_PER_ELEMENT !== 1) {
+        if (!(key instanceof Uint8Array)) {
             throw new TypeError("Key array key must be Uint8Array.");
         }
         if (key.length !== 32) {
@@ -1621,13 +1621,6 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-/**
- * This file contains code for working with file headers and (un)packing
- * file segments.
- * Exported classes should be used inside xsp library, and must be wrapped,
- * if such functionality is needed externally.
- */
-var arrays = require('../util/arrays');
 var sbox = require('../boxes/secret_box');
 var nonceMod = require('../util/nonce');
 /**
@@ -1767,6 +1760,9 @@ var SegInfoHolder = (function () {
     SegInfoHolder.prototype.isEndlessFile = function () {
         return (this.totalNumOfSegments === null);
     };
+    SegInfoHolder.prototype.contentLength = function () {
+        return this.totalContentLen;
+    };
     SegInfoHolder.prototype.setContentLength = function (totalContentLen) {
         if (!this.isEndlessFile()) {
             throw new Error("Cannot set an end to an already finite file.");
@@ -1864,7 +1860,7 @@ var SegInfoHolder = (function () {
             // 1) pack segment common size in 256 chunks
             head[0] = this.segSize >>> 8;
             // 2) 24 bytes with the first segment's nonce
-            head.subarray(1, 25).set(this.segChains[0].nonce);
+            head.set(this.segChains[0].nonce, 1);
         }
         else {
             head = new Uint8Array(6 + 30 * this.segChains.length);
@@ -1883,7 +1879,7 @@ var SegInfoHolder = (function () {
                 // 3.2) 2 bytes with this chain's last segments size
                 storeUintIn2Bytes(head, offset + 4, segChain.lastSegSize);
                 // 3.3) 24 bytes with the first nonce in this chain
-                head.subarray(offset + 6, offset + 30).set(segChain.nonce);
+                head.set(segChain.nonce, offset + 6);
             }
         }
         return head;
@@ -1916,7 +1912,10 @@ var SegInfoHolder = (function () {
         }
         throw new Error("If we get here, there is an error in the loop above.");
     };
-    SegInfoHolder.prototype.getSegmentSize = function (segInd) {
+    SegInfoHolder.prototype.numberOfSegments = function () {
+        return this.totalNumOfSegments;
+    };
+    SegInfoHolder.prototype.segmentSize = function (segInd) {
         if (this.isEndlessFile()) {
             if (segInd > 0xffffffff) {
                 throw new Error("Given segment index is out of bounds.");
@@ -1938,37 +1937,20 @@ var SegInfoHolder = (function () {
         }
         throw new Error("If we get here, there is an error in the loop above.");
     };
+    SegInfoHolder.prototype.segmentsLength = function () {
+        return this.totalSegsLen;
+    };
     return SegInfoHolder;
 })();
-/**
- * @param header is an array with header files. Array must contain only
- * header's bytes. Arrays's length is used to decide on how to process it.
- * @param mkeyDecr is a decryptor, based on a master key
- * @param arrFactory (optional)
- */
-function makeReader(header, mkeyDecr, arrFactory) {
-    if (!arrFactory) {
-        arrFactory = arrays.makeFactory();
-    }
-    var reader = new SegReader(header, mkeyDecr, arrFactory);
-    var wrap = {
-        locationInSegments: reader.locationInSegments.bind(reader),
-        openSeg: reader.openSeg.bind(reader),
-        destroy: reader.destroy.bind(reader),
-        isEndlessFile: reader.isEndlessFile.bind(reader)
-    };
-    return wrap;
-}
-exports.makeReader = makeReader;
 var SegReader = (function (_super) {
     __extends(SegReader, _super);
-    function SegReader(header, mkeyDecr, arrFactory) {
+    function SegReader(key, header, arrFactory) {
         _super.call(this);
         this.arrFactory = arrFactory;
-        if (header.length < 72) {
-            throw new Error("Given header array is too short.");
+        if (key.length !== sbox.KEY_LENGTH) {
+            throw new Error("Given key has wrong size.");
         }
-        this.key = mkeyDecr.open(header.subarray(0, 72));
+        this.key = new Uint8Array(key);
         header = header.subarray(72);
         if (header.length === 65) {
             this.initForEndlessFile(header, this.key, this.arrFactory);
@@ -1984,7 +1966,7 @@ var SegReader = (function (_super) {
     SegReader.prototype.openSeg = function (seg, segInd) {
         var isLastSeg = ((segInd + 1) === this.totalNumOfSegments);
         var nonce = this.getSegmentNonce(segInd, this.arrFactory);
-        var segLen = this.getSegmentSize(segInd);
+        var segLen = this.segmentSize(segInd);
         if (seg.length < segLen) {
             if (!this.isEndlessFile()) {
                 throw new Error("Given byte array is smaller than segment's size.");
@@ -2007,56 +1989,50 @@ var SegReader = (function (_super) {
         this.segChains = null;
         this.arrFactory = null;
     };
+    SegReader.prototype.wrap = function () {
+        var wrap = {
+            locationInSegments: this.locationInSegments.bind(this),
+            openSeg: this.openSeg.bind(this),
+            destroy: this.destroy.bind(this),
+            isEndlessFile: this.isEndlessFile.bind(this),
+            contentLength: this.contentLength.bind(this),
+            segmentSize: this.segmentSize.bind(this),
+            segmentsLength: this.segmentsLength.bind(this),
+            numberOfSegments: this.numberOfSegments.bind(this)
+        };
+        Object.freeze(wrap);
+        return wrap;
+    };
     return SegReader;
 })(SegInfoHolder);
-function makeWriterWrap(writer) {
-    return {
-        locationInSegments: writer.locationInSegments.bind(writer),
-        packSeg: writer.packSeg.bind(writer),
-        packHeader: writer.packHeader.bind(writer),
-        setContentLength: writer.setContentLength.bind(writer),
-        splice: writer.splice.bind(writer),
-        isHeaderModified: writer.isHeaderModified.bind(writer),
-        destroy: writer.destroy.bind(writer),
-        isEndlessFile: writer.isEndlessFile.bind(writer)
-    };
-}
-function makeNewWriter(segSizein256bs, randomBytes, arrFactory) {
-    if (!arrFactory) {
-        arrFactory = arrays.makeFactory();
-    }
-    var writer = new SegWriter(null, null, segSizein256bs, randomBytes, arrFactory);
-    return makeWriterWrap(writer);
-}
-exports.makeNewWriter = makeNewWriter;
-/**
- * @param header is an array with header files. Array must contain only
- * header's bytes. Arrays's length is used to decide on how to process it.
- * @param mkeyDecr is a decryptor, based on a master key
- * @param randomBytes is a function that produces cryptographically strong
- * random numbers (bytes).
- * @param arrFactory (optional)
- */
-function makeWriter(header, mkeyDecr, randomBytes, arrFactory) {
-    if (!arrFactory) {
-        arrFactory = arrays.makeFactory();
-    }
-    var writer = new SegWriter(header, mkeyDecr, null, randomBytes, arrFactory);
-    return makeWriterWrap(writer);
-}
-exports.makeWriter = makeWriter;
+exports.SegReader = SegReader;
 var SegWriter = (function (_super) {
     __extends(SegWriter, _super);
-    function SegWriter(header, mkeyDecr, segSizein256bs, randomBytes, arrFactory) {
+    /**
+     * @param key
+     * @param packedKey
+     * @param header a file's header without (!) packed key's 72 bytes.
+     * Array must contain only header's bytes, as its length is used to decide
+     * how to process it. It should be null for a new writer, and not-null,
+     * when writer is based an existing file's structure.
+     * @param segSizein256bs should be present for a new writer,
+     * otherwise, be null.
+     * @param randomBytes
+     * @param arrFactory
+     */
+    function SegWriter(key, packedKey, header, segSizein256bs, randomBytes, arrFactory) {
         _super.call(this);
         this.arrFactory = arrFactory;
         this.randomBytes = randomBytes;
+        if (key.length !== sbox.KEY_LENGTH) {
+            throw new Error("Given key has wrong size.");
+        }
+        this.key = new Uint8Array(key);
+        if (packedKey.length !== 72) {
+            throw new Error("Given file key pack has wrong size.");
+        }
+        this.packedKey = packedKey;
         if (header) {
-            if (header.length < 72) {
-                throw new Error("Given header array is too short.");
-            }
-            this.key = mkeyDecr.open(header.subarray(0, 72));
-            header = header.subarray(72);
             if (header.length === 65) {
                 this.initForEndlessFile(header, this.key, this.arrFactory);
             }
@@ -2072,17 +2048,7 @@ var SegWriter = (function (_super) {
             if ((segSizein256bs < 1) || (segSizein256bs > 255)) {
                 throw new Error("Given segment size is illegal.");
             }
-            this.segSize = segSizein256bs << 8;
-            this.key = randomBytes(32);
-            this.totalContentLen = null;
-            this.totalNumOfSegments = null;
-            this.totalSegsLen = null;
-            this.segChains = [{
-                numOfSegs: null,
-                lastSegSize: null,
-                nonce: this.randomBytes(24),
-                extendable: true
-            }];
+            this.initOfNewWriter(segSizein256bs << 8);
             this.headerModified = true;
         }
         else {
@@ -2090,9 +2056,21 @@ var SegWriter = (function (_super) {
         }
         Object.seal(this);
     }
+    SegWriter.prototype.initOfNewWriter = function (segSize) {
+        this.segSize = segSize;
+        this.totalContentLen = null;
+        this.totalNumOfSegments = null;
+        this.totalSegsLen = null;
+        this.segChains = [{
+            numOfSegs: null,
+            lastSegSize: null,
+            nonce: this.randomBytes(24),
+            extendable: true
+        }];
+    };
     SegWriter.prototype.packSeg = function (content, segInd) {
         var nonce = this.getSegmentNonce(segInd, this.arrFactory);
-        var expectedContentSize = this.getSegmentSize(segInd) - 16;
+        var expectedContentSize = this.segmentSize(segInd) - 16;
         if (content.length < expectedContentSize) {
             if (!this.isEndlessFile()) {
                 throw new Error("Given content has length " + content.length + ", while content length of segment " + segInd + " should by " + expectedContentSize);
@@ -2115,20 +2093,19 @@ var SegWriter = (function (_super) {
         this.segChains = null;
         this.arrFactory = null;
     };
-    SegWriter.prototype.packHeader = function (mkeyEnc) {
-        if (!this.headerModified) {
-            new Error("Header has not been modified.");
-        }
-        // pack file key
-        var packedfileKey = mkeyEnc.pack(this.key);
+    SegWriter.prototype.reset = function () {
+        this.initOfNewWriter(this.segSize);
+        this.headerModified = true;
+    };
+    SegWriter.prototype.packHeader = function () {
         // pack head
         var head = this.packInfoToBytes();
         // encrypt head with a file key
         head = sbox.formatWN.pack(head, this.randomBytes(24), this.key, this.arrFactory);
         // assemble and return complete header byte array
-        var completeHeader = new Uint8Array(packedfileKey.length + head.length);
-        completeHeader.subarray(0, 72).set(packedfileKey);
-        completeHeader.subarray(72).set(head);
+        var completeHeader = new Uint8Array(this.packedKey.length + head.length);
+        completeHeader.set(this.packedKey, 0);
+        completeHeader.set(head, 72);
         this.headerModified = false;
         return completeHeader;
     };
@@ -2159,16 +2136,38 @@ var SegWriter = (function (_super) {
         // the change, which should be called after reading edge bytes.
         return {};
     };
+    SegWriter.prototype.wrap = function () {
+        var wrap = {
+            locationInSegments: this.locationInSegments.bind(this),
+            packSeg: this.packSeg.bind(this),
+            packHeader: this.packHeader.bind(this),
+            setContentLength: this.setContentLength.bind(this),
+            splice: this.splice.bind(this),
+            isHeaderModified: this.isHeaderModified.bind(this),
+            destroy: this.destroy.bind(this),
+            reset: this.reset.bind(this),
+            isEndlessFile: this.isEndlessFile.bind(this),
+            contentLength: this.contentLength.bind(this),
+            segmentSize: this.segmentSize.bind(this),
+            segmentsLength: this.segmentsLength.bind(this),
+            numberOfSegments: this.numberOfSegments.bind(this)
+        };
+        Object.freeze(wrap);
+        return wrap;
+    };
     return SegWriter;
 })(SegInfoHolder);
+exports.SegWriter = SegWriter;
 Object.freeze(exports);
 
-},{"../boxes/secret_box":5,"../util/arrays":17,"../util/nonce":18}],8:[function(require,module,exports){
+},{"../boxes/secret_box":5,"../util/nonce":18}],8:[function(require,module,exports){
 /* Copyright(c) 2015 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
-exports.segments = require('./xsp-segments');
+var arrays = require('../util/arrays');
+var sbox = require('../boxes/secret_box');
+var segments = require('./xsp-segments');
 function asciiToUint8Array(str) {
     var arr = new Uint8Array(str.length);
     for (var i = 0; i < str.length; i += 1) {
@@ -2253,9 +2252,84 @@ function getXSPHeaderOffset(xspBytes) {
     return loadUintFrom8Bytes(xspBytes, fileStartLen);
 }
 exports.getXSPHeaderOffset = getXSPHeaderOffset;
+var KEY_PACK_LENGTH = 72;
+var KeyHolder = (function () {
+    function KeyHolder(key, keyPack, arrFactory) {
+        this.key = key;
+        this.keyPack = keyPack;
+        this.arrFactory = (arrFactory ? arrFactory : arrays.makeFactory());
+    }
+    KeyHolder.prototype.newSegWriter = function (segSizein256bs, randomBytes) {
+        var writer = new segments.SegWriter(this.key, this.keyPack, null, segSizein256bs, randomBytes, this.arrFactory);
+        return writer.wrap();
+    };
+    KeyHolder.prototype.segWriter = function (header, randomBytes) {
+        var writer = new segments.SegWriter(this.key, new Uint8Array(header.subarray(0, KEY_PACK_LENGTH)), header.subarray(KEY_PACK_LENGTH), null, randomBytes, this.arrFactory);
+        return writer.wrap();
+    };
+    KeyHolder.prototype.segReader = function (header) {
+        var reader = new segments.SegReader(this.key, header, this.arrFactory);
+        return reader.wrap();
+    };
+    KeyHolder.prototype.destroy = function () {
+        if (this.key) {
+            arrays.wipe(this.key);
+            this.key = null;
+        }
+        this.keyPack = null;
+        if (this.arrFactory) {
+            this.arrFactory.wipeRecycled();
+            this.arrFactory = null;
+        }
+    };
+    KeyHolder.prototype.wrap = function () {
+        var wrap = {
+            destroy: this.destroy.bind(this),
+            newSegWriter: this.newSegWriter.bind(this),
+            segWriter: this.segWriter.bind(this),
+            segReader: this.segReader.bind(this),
+            clone: this.clone.bind(this)
+        };
+        Object.freeze(wrap);
+        return wrap;
+    };
+    KeyHolder.prototype.clone = function (arrFactory) {
+        var kh = new KeyHolder(this.key, this.keyPack, arrFactory);
+        return kh.wrap();
+    };
+    return KeyHolder;
+})();
+/**
+ * @param mkeyEncr master key encryptor, which is used to make file key pack.
+ * @param randomBytes is a function that produces cryptographically strong
+ * random numbers (bytes).
+ * @param arrFactory (optional) array factory
+ * @return file key holder with a newly generated key.
+ */
+function makeNewFileKeyHolder(mkeyEncr, randomBytes, arrFactory) {
+    var fileKey = randomBytes(sbox.KEY_LENGTH);
+    var fileKeyPack = mkeyEncr.pack(fileKey);
+    var kh = new KeyHolder(fileKey, fileKeyPack, arrFactory);
+    return kh.wrap();
+}
+exports.makeNewFileKeyHolder = makeNewFileKeyHolder;
+/**
+ * @param mkeyDecr master key decryptor, which is used to open file key.
+ * @param header is an array with file's header. Array can be smaller than whole
+ * header, but it must contain initial file key pack.
+ * @param arrFactory (optional) array factory
+ * @return file key holder with a key, extracted from a given header.
+ */
+function makeFileKeyHolder(mkeyDecr, header, arrFactory) {
+    var fileKeyPack = new Uint8Array(header.subarray(0, KEY_PACK_LENGTH));
+    var fileKey = mkeyDecr.open(fileKeyPack);
+    var kh = new KeyHolder(fileKey, fileKeyPack, arrFactory);
+    return kh.wrap();
+}
+exports.makeFileKeyHolder = makeFileKeyHolder;
 Object.freeze(exports);
 
-},{"./xsp-segments":7}],9:[function(require,module,exports){
+},{"../boxes/secret_box":5,"../util/arrays":17,"./xsp-segments":7}],9:[function(require,module,exports){
 /* Copyright(c) 2015 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -2659,9 +2733,9 @@ function crypto_hashblocks(statebytes, inArr, arrFactory) {
 }
 /**
  * Analog of iv in crypto_hash/sha512/ref/hash.c
+ * Length === 64.
  */
-var iv = new Uint8Array(64);
-iv.set([0x6a, 0x09, 0xe6, 0x67, 0xf3, 0xbc, 0xc9, 0x08, 0xbb, 0x67, 0xae, 0x85, 0x84, 0xca, 0xa7, 0x3b, 0x3c, 0x6e, 0xf3, 0x72, 0xfe, 0x94, 0xf8, 0x2b, 0xa5, 0x4f, 0xf5, 0x3a, 0x5f, 0x1d, 0x36, 0xf1, 0x51, 0x0e, 0x52, 0x7f, 0xad, 0xe6, 0x82, 0xd1, 0x9b, 0x05, 0x68, 0x8c, 0x2b, 0x3e, 0x6c, 0x1f, 0x1f, 0x83, 0xd9, 0xab, 0xfb, 0x41, 0xbd, 0x6b, 0x5b, 0xe0, 0xcd, 0x19, 0x13, 0x7e, 0x21, 0x79]);
+var iv = new Uint8Array([0x6a, 0x09, 0xe6, 0x67, 0xf3, 0xbc, 0xc9, 0x08, 0xbb, 0x67, 0xae, 0x85, 0x84, 0xca, 0xa7, 0x3b, 0x3c, 0x6e, 0xf3, 0x72, 0xfe, 0x94, 0xf8, 0x2b, 0xa5, 0x4f, 0xf5, 0x3a, 0x5f, 0x1d, 0x36, 0xf1, 0x51, 0x0e, 0x52, 0x7f, 0xad, 0xe6, 0x82, 0xd1, 0x9b, 0x05, 0x68, 0x8c, 0x2b, 0x3e, 0x6c, 0x1f, 0x1f, 0x83, 0xd9, 0xab, 0xfb, 0x41, 0xbd, 0x6b, 0x5b, 0xe0, 0xcd, 0x19, 0x13, 0x7e, 0x21, 0x79]);
 function hash_padded_block(h, oddBytes, totalLen, arrFactory) {
     var padded = arrFactory.getUint8Array(256);
     var oddLen = oddBytes.length;
@@ -3158,9 +3232,9 @@ exports.scrypt = scrypt;
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
 /**
  * Analog of round in crypto_hashblocks/sha256/inplace/blocks.c
+ * Length === 64.
  */
-var round = new Uint32Array(64);
-round.set([0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]);
+var round = new Uint32Array([0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]);
 /**
  * Analog of SHA256_Transform in lib/crypto/sha256.h
  * with all C macros expanded.
@@ -3260,9 +3334,9 @@ function hashFromU32toU8(statebytes, state) {
 }
 /**
  * Analog of iv in crypto_hash/sha256/inplace/ref.c
+ * Length === 8.
  */
-var iv = new Uint32Array(8);
-iv.set([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
+var iv = new Uint32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
 function hash_padded_block(h, oddBytes, totalLen, arrFactory) {
     var padded = arrFactory.getUint8Array(128);
     var oddLen = oddBytes.length;
@@ -3972,20 +4046,17 @@ exports.recycle_ge25519 = recycle_ge25519;
  * Analog of constant ge25519_ecd in crypto_sign/ed25519/ref/ge25519.c
  *  d
  */
-var ge25519_ecd = new Uint32Array(32);
-ge25519_ecd.set([0xA3, 0x78, 0x59, 0x13, 0xCA, 0x4D, 0xEB, 0x75, 0xAB, 0xD8, 0x41, 0x41, 0x4D, 0x0A, 0x70, 0x00, 0x98, 0xE8, 0x79, 0x77, 0x79, 0x40, 0xC7, 0x8C, 0x73, 0xFE, 0x6F, 0x2B, 0xEE, 0x6C, 0x03, 0x52]);
+var ge25519_ecd = new Uint32Array([0xA3, 0x78, 0x59, 0x13, 0xCA, 0x4D, 0xEB, 0x75, 0xAB, 0xD8, 0x41, 0x41, 0x4D, 0x0A, 0x70, 0x00, 0x98, 0xE8, 0x79, 0x77, 0x79, 0x40, 0xC7, 0x8C, 0x73, 0xFE, 0x6F, 0x2B, 0xEE, 0x6C, 0x03, 0x52]);
 /**
  * Analog of constant ge25519_ec2d in crypto_sign/ed25519/ref/ge25519.c
  *  2*d
  */
-var ge25519_ec2d = new Uint32Array(32);
-ge25519_ec2d.set([0x59, 0xF1, 0xB2, 0x26, 0x94, 0x9B, 0xD6, 0xEB, 0x56, 0xB1, 0x83, 0x82, 0x9A, 0x14, 0xE0, 0x00, 0x30, 0xD1, 0xF3, 0xEE, 0xF2, 0x80, 0x8E, 0x19, 0xE7, 0xFC, 0xDF, 0x56, 0xDC, 0xD9, 0x06, 0x24]);
+var ge25519_ec2d = new Uint32Array([0x59, 0xF1, 0xB2, 0x26, 0x94, 0x9B, 0xD6, 0xEB, 0x56, 0xB1, 0x83, 0x82, 0x9A, 0x14, 0xE0, 0x00, 0x30, 0xD1, 0xF3, 0xEE, 0xF2, 0x80, 0x8E, 0x19, 0xE7, 0xFC, 0xDF, 0x56, 0xDC, 0xD9, 0x06, 0x24]);
 /**
  * Analog of constant ge25519_sqrtm1 in crypto_sign/ed25519/ref/ge25519.c
  *  sqrt(-1)
  */
-var ge25519_sqrtm1 = new Uint32Array(32);
-ge25519_sqrtm1.set([0xB0, 0xA0, 0x0E, 0x4A, 0x27, 0x1B, 0xEE, 0xC4, 0x78, 0xE4, 0x2F, 0xAD, 0x06, 0x18, 0x43, 0x2F, 0xA7, 0xD7, 0xFB, 0x3D, 0x99, 0x00, 0x4D, 0x2B, 0x0B, 0xDF, 0xC1, 0x4F, 0x80, 0x24, 0x83, 0x2B]);
+var ge25519_sqrtm1 = new Uint32Array([0xB0, 0xA0, 0x0E, 0x4A, 0x27, 0x1B, 0xEE, 0xC4, 0x78, 0xE4, 0x2F, 0xAD, 0x06, 0x18, 0x43, 0x2F, 0xA7, 0xD7, 0xFB, 0x3D, 0x99, 0x00, 0x4D, 0x2B, 0x0B, 0xDF, 0xC1, 0x4F, 0x80, 0x24, 0x83, 0x2B]);
 /**
  * Analog of constant ge25519_base in crypto_sign/ed25519/ref/ge25519.c
  * Packed coordinates of the base point
@@ -4760,14 +4831,14 @@ function make_shortsc25519(arrFactory) {
 exports.make_shortsc25519 = make_shortsc25519;
 /**
  * Analog of constant m in crypto_sign/ed25519/ref/sc25519.c
+ * Length === 32.
  */
-var m = new Uint8Array(32);
-m.set([0xED, 0xD3, 0xF5, 0x5C, 0x1A, 0x63, 0x12, 0x58, 0xD6, 0x9C, 0xF7, 0xA2, 0xDE, 0xF9, 0xDE, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10]);
+var m = new Uint8Array([0xED, 0xD3, 0xF5, 0x5C, 0x1A, 0x63, 0x12, 0x58, 0xD6, 0x9C, 0xF7, 0xA2, 0xDE, 0xF9, 0xDE, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10]);
 /**
  * Analog of constant mu in crypto_sign/ed25519/ref/sc25519.c
+ * Length === 33.
  */
-var mu = new Uint8Array(33);
-mu.set([0x1B, 0x13, 0x2C, 0x0A, 0xA3, 0xE5, 0x9C, 0xED, 0xA7, 0x29, 0x63, 0x08, 0x5D, 0x21, 0x06, 0x21, 0xEB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F]);
+var mu = new Uint8Array([0x1B, 0x13, 0x2C, 0x0A, 0xA3, 0xE5, 0x9C, 0xED, 0xA7, 0x29, 0x63, 0x08, 0x5D, 0x21, 0x06, 0x21, 0xEB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F]);
 /**
  * Analog of lt in crypto_sign/ed25519/ref/sc25519.c
  * All inputs are 16-bit.
@@ -4995,7 +5066,7 @@ var vectVerify = require('../util/verify');
  * Analog of crypto_sign_keypair in crypto_sign/ed25519/ref/keypair.c
  */
 function generate_keypair(seed, arrFactory) {
-    if (seed.BYTES_PER_ELEMENT !== 1) {
+    if (!(seed instanceof Uint8Array)) {
         throw new TypeError("Seed must be Uint8Array.");
     }
     if (seed.length !== 32) {
@@ -5046,7 +5117,7 @@ exports.extract_pkey = extract_pkey;
  * Analog of crypto_sign in crypto_sign/ed25519/ref/sign.c
  */
 function sign(m, sk, arrFactory) {
-    if (sk.BYTES_PER_ELEMENT !== 1) {
+    if (!(sk instanceof Uint8Array)) {
         throw new TypeError("Key array sk must be Uint8Array.");
     }
     if (sk.length !== 64) {
@@ -5077,7 +5148,7 @@ function sign(m, sk, arrFactory) {
     ge.scalarmult_base(ger, sck, arrFactory);
     ge.pack(sm.subarray(0, 32), ger, arrFactory);
     /* sm: 32-byte R, 32-byte z, mlen-byte m */
-    sm.subarray(32, 64).set(pk);
+    sm.set(pk, 32);
     /* sm: 32-byte R, 32-byte A, mlen-byte m */
     var hram = sha512.hash(sm, arrFactory);
     /* hram: 64-byte H(R,A,m) */
@@ -5094,7 +5165,7 @@ function sign(m, sk, arrFactory) {
 }
 exports.sign = sign;
 function signature(m, sk, arrFactory) {
-    if (sk.BYTES_PER_ELEMENT !== 1) {
+    if (!(sk instanceof Uint8Array)) {
         throw new TypeError("Key array sk must be Uint8Array.");
     }
     if (sk.length !== 64) {
@@ -5150,7 +5221,7 @@ exports.signature = signature;
  * Analog of crypto_sign_open in crypto_sign/ed25519/ref/open.c
  */
 function open(sm, pk, arrFactory) {
-    if (pk.BYTES_PER_ELEMENT !== 1) {
+    if (!(pk instanceof Uint8Array)) {
         throw new TypeError("Key array pk must be Uint8Array.");
     }
     if (pk.length !== 32) {
@@ -5172,7 +5243,7 @@ function open(sm, pk, arrFactory) {
     sc.from32bytes(scs, sm.subarray(32, 64), arrFactory);
     var m = new Uint8Array(sm.length);
     m.set(sm);
-    m.subarray(32, 64).set(pk);
+    m.set(pk, 32);
     var hram = sha512.hash(m, arrFactory);
     sc.from64bytes(schram, hram, arrFactory);
     ge.double_scalarmult_vartime(get2, get1, schram, ge.base, scs, arrFactory);
@@ -5188,7 +5259,7 @@ function open(sm, pk, arrFactory) {
 }
 exports.open = open;
 function verify(sig, m, pk, arrFactory) {
-    if (pk.BYTES_PER_ELEMENT !== 1) {
+    if (!(pk instanceof Uint8Array)) {
         throw new TypeError("Key array pk must be Uint8Array.");
     }
     if (pk.length !== 32) {
@@ -5366,10 +5437,10 @@ var ArrFactory = (function () {
             if ((arr.byteOffset !== 0) || (arr.length * arr.BYTES_PER_ELEMENT !== arr.buffer.byteLength)) {
                 throw new TypeError("Given, as argument #" + (i + 1) + " is a view " + "of an array, and these are not supposed to be recycled.");
             }
-            if (arr.BYTES_PER_ELEMENT === 1) {
+            if (arr instanceof Uint8Array) {
                 this.recycleUint8Array(arr);
             }
-            else if (arr.BYTES_PER_ELEMENT === 4) {
+            else if (arr instanceof Uint32Array) {
                 this.recycleUint32Array(arr);
             }
             else {

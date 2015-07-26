@@ -13,40 +13,12 @@
 import arrays = require('../util/arrays');
 import sbox = require('../boxes/secret_box');
 import nonceMod = require('../util/nonce');
+import xsp = require('./xsp');
 
 interface ChainedSegsInfo {
 	nonce: Uint8Array;
 	numOfSegs: number;
 	lastSegSize: number;
-}
-
-export interface LocationInSegment {
-	
-	/**
-	 * Is a position in a decrypted content of a segment.
-	 */
-	pos: number;
-	
-	/**
-	 * Segment with a loaction of interest.
-	 */
-	seg: {
-		
-		/**
-		 * Index that points to the segment in the file.
-		 */
-		ind: number;
-		
-		/**
-		 * Segment's start in the encrypted file.
-		 */
-		start: number;
-		
-		/**
-		 * Length of encrypted segment.
-		 */
-		len: number;
-	};
 }
 
 /**
@@ -230,6 +202,10 @@ class SegInfoHolder {
 		return (this.totalNumOfSegments === null);
 	}
 	
+	contentLength(): number {
+		return this.totalContentLen;
+	}
+	
 	setContentLength(totalContentLen: number): void {
 		if (!this.isEndlessFile()) { throw new Error(
 				"Cannot set an end to an already finite file."); }
@@ -262,7 +238,7 @@ class SegInfoHolder {
 	 * @param pos is byte's position index in file content.
 	 * @return corresponding location in segment with segment's info.
 	 */
-	locationInSegments(pos: number): LocationInSegment {
+	locationInSegments(pos: number): xsp.LocationInSegment {
 		if (pos < 0) { throw new Error("Given position is out of bounds."); }
 		var contentSegSize = this.segSize - 16;
 		var segInd: number;
@@ -328,7 +304,7 @@ class SegInfoHolder {
 			// 1) pack segment common size in 256 chunks
 			head[0] = this.segSize >>> 8;
 			// 2) 24 bytes with the first segment's nonce
-			head.subarray(1, 25).set(this.segChains[0].nonce);
+			head.set(this.segChains[0].nonce, 1);
 		} else {
 			head = new Uint8Array(6 + 30*this.segChains.length);
 			// 1) pack total segments length
@@ -346,7 +322,7 @@ class SegInfoHolder {
 				// 3.2) 2 bytes with this chain's last segments size
 				storeUintIn2Bytes(head, offset + 4, segChain.lastSegSize);
 				// 3.3) 24 bytes with the first nonce in this chain
-				head.subarray(offset + 6, offset + 30).set(segChain.nonce);
+				head.set(segChain.nonce, offset + 6);
 			}
 		}
 		return head;
@@ -381,7 +357,11 @@ class SegInfoHolder {
 		throw new Error("If we get here, there is an error in the loop above.");
 	}
 	
-	getSegmentSize(segInd: number): number {
+	numberOfSegments(): number {
+		return this.totalNumOfSegments;
+	}
+	
+	segmentSize(segInd: number): number {
 		if (this.isEndlessFile()) {
 			if (segInd > 0xffffffff) { throw new Error(
 					"Given segment index is out of bounds."); }
@@ -404,60 +384,13 @@ class SegInfoHolder {
 		throw new Error("If we get here, there is an error in the loop above.");
 	}
 	
-}
-
-export interface SegmentsReader {
-	
-	/**
-	 * @param pos is byte's position index in file content.
-	 * @return corresponding location in segment with segment's info.
-	 */
-	locationInSegments(pos: number): LocationInSegment;
-	
-	/**
-	 * @param seg is an array with encrypted segment's bytes, starting at
-	 * zeroth index. Array may be longer than a segment, but it will an error,
-	 * if it is shorter.
-	 * @param segInd is segment's index in file.
-	 * @return decrypted content bytes of a given segment and a length of
-	 * decrypted segment.
-	 * Data array is a view of buffer, which has 32 zeros preceding
-	 * content bytes.
-	 */
-	openSeg(seg: Uint8Array, segInd: number):
-		{ data: Uint8Array; segLen: number; last?: boolean; };
-	
-	/**
-	 * This wipes file key and releases used resources.
-	 */
-	destroy(): void;
-	
-	isEndlessFile(): boolean;
-	
-}
-
-/**
- * @param header is an array with header files. Array must contain only
- * header's bytes. Arrays's length is used to decide on how to process it.
- * @param mkeyDecr is a decryptor, based on a master key
- * @param arrFactory (optional)
- */
-export function makeReader(header: Uint8Array, mkeyDecr: sbox.Decryptor,
-			arrFactory?: arrays.Factory): SegmentsReader {
-	if (!arrFactory) {
-		arrFactory = arrays.makeFactory();
+	segmentsLength(): number {
+		return this.totalSegsLen;
 	}
-	var reader = new SegReader(header, mkeyDecr, arrFactory);
-	var wrap: SegmentsReader = {
-		locationInSegments: reader.locationInSegments.bind(reader),
-		openSeg: reader.openSeg.bind(reader),
-		destroy: reader.destroy.bind(reader),
-		isEndlessFile: reader.isEndlessFile.bind(reader)
-	};
-	return wrap;
+	
 }
 
-class SegReader extends SegInfoHolder implements SegmentsReader {
+export class SegReader extends SegInfoHolder implements xsp.SegmentsReader {
 	
 	/**
 	 * This is a file key, which should be wipped, after this object
@@ -467,13 +400,13 @@ class SegReader extends SegInfoHolder implements SegmentsReader {
 	
 	private arrFactory: arrays.Factory;
 	
-	constructor(header: Uint8Array, mkeyDecr: sbox.Decryptor,
+	constructor(key: Uint8Array, header: Uint8Array,
 			arrFactory: arrays.Factory) {
 		super();
 		this.arrFactory = arrFactory;
-		if (header.length < 72) { throw new Error(
-				"Given header array is too short."); }
-		this.key = mkeyDecr.open(header.subarray(0, 72));
+		if (key.length !== sbox.KEY_LENGTH) { throw new Error(
+				"Given key has wrong size."); }
+		this.key = new Uint8Array(key);
 		header = header.subarray(72);
 		if (header.length === 65) {
 			this.initForEndlessFile(header, this.key, this.arrFactory);
@@ -490,7 +423,7 @@ class SegReader extends SegInfoHolder implements SegmentsReader {
 			{ data: Uint8Array; segLen: number; last?: boolean; } {
 		var isLastSeg = ((segInd + 1) === this.totalNumOfSegments)
 		var nonce = this.getSegmentNonce(segInd, this.arrFactory);
-		var segLen = this.getSegmentSize(segInd);
+		var segLen = this.segmentSize(segInd);
 		if (seg.length < segLen) {
 			if (!this.isEndlessFile()) { throw new Error(
 					"Given byte array is smaller than segment's size."); }
@@ -513,79 +446,24 @@ class SegReader extends SegInfoHolder implements SegmentsReader {
 		this.arrFactory = null;
 	}
 	
-}
-
-export interface SegmentsWriter {
-	
-	/**
-	 * @param pos is byte's position index in file content.
-	 * @return corresponding location in segment with segment's info.
-	 */
-	locationInSegments(pos: number): LocationInSegment;
-	
-	packSeg(content: Uint8Array, segInd: number):
-		{ dataLen: number; seg: Uint8Array };
-	
-	/**
-	 * This wipes file key and releases used resources.
-	 */
-	destroy(): void;
-	
-	packHeader(mkeyEnc: sbox.Encryptor): Uint8Array;
-	
-	setContentLength(totalContentLen: number): void;
-	
-	isHeaderModified(): boolean;
-	
-	splice(pos: number, rem: number, ins: number);
-	
-	isEndlessFile(): boolean;
-	
-}
-
-function makeWriterWrap(writer: SegWriter): SegmentsWriter {
-	return {
-		locationInSegments: writer.locationInSegments.bind(writer),
-		packSeg: writer.packSeg.bind(writer),
-		packHeader: writer.packHeader.bind(writer),
-		setContentLength: writer.setContentLength.bind(writer),
-		splice: writer.splice.bind(writer),
-		isHeaderModified: writer.isHeaderModified.bind(writer),
-		destroy: writer.destroy.bind(writer),
-		isEndlessFile: writer.isEndlessFile.bind(writer)
-	};
-}
-
-export function makeNewWriter(segSizein256bs: number,
-		randomBytes: (n: number) => Uint8Array,
-		arrFactory?: arrays.Factory): SegmentsWriter {
-	if (!arrFactory) {
-		arrFactory = arrays.makeFactory();
+	wrap(): xsp.SegmentsReader {
+		var wrap: xsp.SegmentsReader = {
+			locationInSegments: this.locationInSegments.bind(this),
+			openSeg: this.openSeg.bind(this),
+			destroy: this.destroy.bind(this),
+			isEndlessFile: this.isEndlessFile.bind(this),
+			contentLength: this.contentLength.bind(this),
+			segmentSize: this.segmentSize.bind(this),
+			segmentsLength: this.segmentsLength.bind(this),
+			numberOfSegments: this.numberOfSegments.bind(this)
+		};
+		Object.freeze(wrap);
+		return wrap;
 	}
-	var writer = new SegWriter(null, null,
-			segSizein256bs, randomBytes, arrFactory);
-	return makeWriterWrap(writer);
+	
 }
 
-/**
- * @param header is an array with header files. Array must contain only
- * header's bytes. Arrays's length is used to decide on how to process it.
- * @param mkeyDecr is a decryptor, based on a master key
- * @param randomBytes is a function that produces cryptographically strong
- * random numbers (bytes).
- * @param arrFactory (optional)
- */
-export function makeWriter(header: Uint8Array, mkeyDecr: sbox.Decryptor,
-		randomBytes: (n: number) => Uint8Array,
-		arrFactory?: arrays.Factory): SegmentsWriter {
-	if (!arrFactory) {
-		arrFactory = arrays.makeFactory();
-	}
-	var writer = new SegWriter(header, mkeyDecr, null, randomBytes, arrFactory);
-	return makeWriterWrap(writer);
-}
-
-class SegWriter extends SegInfoHolder implements SegmentsWriter {
+export class SegWriter extends SegInfoHolder implements xsp.SegmentsWriter {
 	
 	/**
 	 * This is a file key, which should be wipped, after this object
@@ -593,23 +471,46 @@ class SegWriter extends SegInfoHolder implements SegmentsWriter {
 	 */
 	private key: Uint8Array;
 	
+	/**
+	 * This is a part of header with encrypted file key.
+	 * The sole purpose of this field is to reuse these bytes on writting,
+	 * eliminated a need to have a master key encryptor every time, when
+	 * header is packed.
+	 */
+	private packedKey: Uint8Array;
+	
 	private arrFactory: arrays.Factory;
 	
 	private randomBytes: (n: number) => Uint8Array;
 	
 	private headerModified: boolean;
 	
-	constructor(header: Uint8Array, mkeyDecr: sbox.Decryptor,
-			segSizein256bs: number, randomBytes: (n: number) => Uint8Array,
-			arrFactory: arrays.Factory) {
+	/**
+	 * @param key
+	 * @param packedKey
+	 * @param header a file's header without (!) packed key's 72 bytes.
+	 * Array must contain only header's bytes, as its length is used to decide
+	 * how to process it. It should be null for a new writer, and not-null,
+	 * when writer is based an existing file's structure.
+	 * @param segSizein256bs should be present for a new writer,
+	 * otherwise, be null.
+	 * @param randomBytes
+	 * @param arrFactory
+	 */
+	constructor(key: Uint8Array, packedKey: Uint8Array,
+			header: Uint8Array, segSizein256bs: number,
+			randomBytes: (n: number) => Uint8Array, arrFactory: arrays.Factory) {
 		super();
 		this.arrFactory = arrFactory;
 		this.randomBytes = randomBytes;
+		if (key.length !== sbox.KEY_LENGTH) { throw new Error(
+				"Given key has wrong size."); }
+		this.key = new Uint8Array(key);
+		if (packedKey.length !== 72) { throw new Error(
+				"Given file key pack has wrong size."); }
+		this.packedKey = packedKey;
+		
 		if (header) {
-			if (header.length < 72) { throw new Error(
-					"Given header array is too short."); }
-			this.key = mkeyDecr.open(header.subarray(0, 72));
-			header = header.subarray(72);
 			if (header.length === 65) {
 				this.initForEndlessFile(header, this.key, this.arrFactory);
 			} else {
@@ -623,17 +524,7 @@ class SegWriter extends SegInfoHolder implements SegmentsWriter {
 			if ((segSizein256bs < 1) || (segSizein256bs > 255)) {
 				throw new Error("Given segment size is illegal.");
 			}
-			this.segSize = segSizein256bs << 8;
-			this.key = randomBytes(32);
-			this.totalContentLen = null;
-			this.totalNumOfSegments = null;
-			this.totalSegsLen = null;
-			this.segChains = [ {
-				numOfSegs: null,
-				lastSegSize: null,
-				nonce: this.randomBytes(24),
-				extendable: true
-			} ];
+			this.initOfNewWriter(segSizein256bs << 8);
 			this.headerModified = true;
 		} else {
 			throw new Error("Arguments are illegal, both header bytes and "+
@@ -642,10 +533,23 @@ class SegWriter extends SegInfoHolder implements SegmentsWriter {
 		Object.seal(this);
 	}
 	
+	private initOfNewWriter(segSize: number): void {
+		this.segSize = segSize;
+		this.totalContentLen = null;
+		this.totalNumOfSegments = null;
+		this.totalSegsLen = null;
+		this.segChains = [ {
+			numOfSegs: null,
+			lastSegSize: null,
+			nonce: this.randomBytes(24),
+			extendable: true
+		} ];
+	}
+	
 	packSeg(content: Uint8Array, segInd: number):
 			{ dataLen: number; seg: Uint8Array } {
 		var nonce = this.getSegmentNonce(segInd, this.arrFactory);
-		var expectedContentSize = this.getSegmentSize(segInd) - 16;
+		var expectedContentSize = this.segmentSize(segInd) - 16;
 		if (content.length < expectedContentSize) {
 			if (!this.isEndlessFile()) { throw new Error(
 					"Given content has length "+content.length+
@@ -670,11 +574,12 @@ class SegWriter extends SegInfoHolder implements SegmentsWriter {
 		this.arrFactory = null;
 	}
 	
-	packHeader(mkeyEnc: sbox.Encryptor): Uint8Array {
-		if (!this.headerModified) { new Error(
-				"Header has not been modified."); }
-		// pack file key
-		var packedfileKey = mkeyEnc.pack(this.key);
+	reset(): void {
+		this.initOfNewWriter(this.segSize);
+		this.headerModified = true;
+	}
+	
+	packHeader(): Uint8Array {
 		// pack head
 		var head = this.packInfoToBytes();
 		// encrypt head with a file key
@@ -682,9 +587,9 @@ class SegWriter extends SegInfoHolder implements SegmentsWriter {
 				this.key, this.arrFactory);
 		// assemble and return complete header byte array
 		var completeHeader = new Uint8Array(
-				packedfileKey.length + head.length);
-		completeHeader.subarray(0, 72).set(packedfileKey);
-		completeHeader.subarray(72).set(head);
+				this.packedKey.length + head.length);
+		completeHeader.set(this.packedKey, 0);
+		completeHeader.set(head, 72);
 		this.headerModified = false;
 		return completeHeader;
 	}
@@ -716,7 +621,7 @@ class SegWriter extends SegInfoHolder implements SegmentsWriter {
 		throw new Error("Code is incomplete");
 		
 		// - calculate locations of edge bytes.
-		var remEnd: LocationInSegment;
+		var remEnd: xsp.LocationInSegment;
 		if (rem > 0) {
 			
 		}
@@ -726,6 +631,26 @@ class SegWriter extends SegInfoHolder implements SegmentsWriter {
 		// the change, which should be called after reading edge bytes.
 		
 		return {};
+	}
+	
+	wrap(): xsp.SegmentsWriter {
+		var wrap: xsp.SegmentsWriter = {
+			locationInSegments: this.locationInSegments.bind(this),
+			packSeg: this.packSeg.bind(this),
+			packHeader: this.packHeader.bind(this),
+			setContentLength: this.setContentLength.bind(this),
+			splice: this.splice.bind(this),
+			isHeaderModified: this.isHeaderModified.bind(this),
+			destroy: this.destroy.bind(this),
+			reset: this.reset.bind(this),
+			isEndlessFile: this.isEndlessFile.bind(this),
+			contentLength: this.contentLength.bind(this),
+			segmentSize: this.segmentSize.bind(this),
+			segmentsLength: this.segmentsLength.bind(this),
+			numberOfSegments: this.numberOfSegments.bind(this)
+		};
+		Object.freeze(wrap);
+		return wrap;
 	}
 	
 }

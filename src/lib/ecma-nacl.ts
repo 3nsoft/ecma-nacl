@@ -41,7 +41,6 @@ export function compareVectors(x, y) {
 	return verify.verify(x, y, x.length);
 }
 
-
 export interface GetRandom {
 	(n: number): Uint8Array;	
 }

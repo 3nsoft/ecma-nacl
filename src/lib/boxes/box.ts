@@ -23,7 +23,7 @@ var SIGMA = streamMod.SIGMA;
  */
 export function generate_pubkey(sk: Uint8Array,
 		arrFactory?: arrays.Factory): Uint8Array {
-	if (sk.BYTES_PER_ELEMENT !== 1) { throw new TypeError(
+	if (!(sk instanceof Uint8Array)) { throw new TypeError(
 			"Key array k must be Uint8Array."); }
 	if (sk.length !== 32) { throw new Error("Key array sk should have 32 "+
 			"elements (bytes) in it, but it is "+sk.length+" elements long."); }
@@ -51,11 +51,11 @@ var n_to_calc_dhshared_key = new Uint8Array(16);
  */
 export function calc_dhshared_key(pk: Uint8Array, sk: Uint8Array,
 		arrFactory?: arrays.Factory): Uint8Array {
-	if (pk.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Public key array pk must be Uint8Array."); }
+	if (!(pk instanceof Uint8Array)) { throw new TypeError("Public key array pk must be Uint8Array."); }
 	if (pk.length !== 32) { throw new Error(
 			"Public key array pk should have 32 elements (bytes) in it, but it is "+
 			pk.length+" elements long."); }
-	if (sk.BYTES_PER_ELEMENT !== 1) { throw new TypeError("Secret key array sk must be Uint8Array."); }
+	if (!(sk instanceof Uint8Array)) { throw new TypeError("Secret key array sk must be Uint8Array."); }
 	if (sk.length !== 32) { throw new Error(
 			"Secret key array sk should have 32 elements (bytes) in it, but it is "+
 			sk.length+" elements long."); }

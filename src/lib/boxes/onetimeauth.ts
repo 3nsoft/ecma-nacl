@@ -51,9 +51,10 @@ function squeeze(h: Uint32Array): void {
 
 /**
  * minusp array in crypto_onetimeauth/poly1305/ref/auth.c
+ * Length === 17.
  */
-var minusp = new Uint32Array(17);
-minusp.set([ 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252 ]);
+var minusp = new Uint32Array(
+	[ 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252 ]);
 
 /**
  * Analog of freeze in crypto_onetimeauth/poly1305/ref/auth.c
