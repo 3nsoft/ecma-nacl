@@ -239,6 +239,9 @@ function testEndlessFile(test: nu.Test,
 	test.done();
 }
 
+export function emptyFiniteFile_seg_64(test: nu.Test) {
+	testSingleChainHeader(test, 0, 64);
+}
 export function singleChainHeader_len_1_seg_64(test: nu.Test) {
 	testSingleChainHeader(test, 1, 64);
 }

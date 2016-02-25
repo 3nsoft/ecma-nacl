@@ -165,8 +165,18 @@ class SegInfoHolder {
 		header = sbox.formatWN.open(header, key, arrFactory);
 		this.totalSegsLen = loadUintFrom5Bytes(header, 0);
 		this.segSize = (header[5] << 8);
-		if ((this.segSize === 0) || (this.totalSegsLen === 0)) {
-			throw new Error("Given header is malformed."); }
+		if (this.segSize === 0) { throw new Error(
+			"Given header is malformed: default segment size is zero"); }
+		
+		// empty file
+		if (this.totalSegsLen === 0) {
+			this.segChains = [];
+			this.totalContentLen = 0;
+			this.totalNumOfSegments = 0;
+			return;
+		}
+		
+		// non-empty file
 		this.segChains = new Array<ChainedSegsInfo>((header.length-6) / 30);
 		var segChain: ChainedSegsInfo;
 		this.totalContentLen = 0;
@@ -553,7 +563,7 @@ export class SegWriter extends SegInfoHolder implements xsp.SegmentsWriter {
 			if (!this.isEndlessFile()) { throw new Error(
 					"Given content has length "+content.length+
 					", while content length of segment "+segInd+
-					" should by "+expectedContentSize); }
+					" should be "+expectedContentSize); }
 		} else if (content.length > expectedContentSize) {
 			content = content.subarray(0,expectedContentSize);
 		}

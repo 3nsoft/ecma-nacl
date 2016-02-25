@@ -114,9 +114,17 @@ var SegInfoHolder = (function () {
         header = sbox.formatWN.open(header, key, arrFactory);
         this.totalSegsLen = loadUintFrom5Bytes(header, 0);
         this.segSize = (header[5] << 8);
-        if ((this.segSize === 0) || (this.totalSegsLen === 0)) {
-            throw new Error("Given header is malformed.");
+        if (this.segSize === 0) {
+            throw new Error("Given header is malformed: default segment size is zero");
         }
+        // empty file
+        if (this.totalSegsLen === 0) {
+            this.segChains = [];
+            this.totalContentLen = 0;
+            this.totalNumOfSegments = 0;
+            return;
+        }
+        // non-empty file
         this.segChains = new Array((header.length - 6) / 30);
         var segChain;
         this.totalContentLen = 0;
@@ -451,8 +459,7 @@ var SegWriter = (function (_super) {
         this.segChains = [{
             numOfSegs: null,
             lastSegSize: null,
-            nonce: this.randomBytes(24),
-            extendable: true
+            nonce: this.randomBytes(24)
         }];
     };
     SegWriter.prototype.packSeg = function (content, segInd) {
@@ -460,7 +467,7 @@ var SegWriter = (function (_super) {
         var expectedContentSize = this.segmentSize(segInd) - 16;
         if (content.length < expectedContentSize) {
             if (!this.isEndlessFile()) {
-                throw new Error("Given content has length " + content.length + ", while content length of segment " + segInd + " should by " + expectedContentSize);
+                throw new Error("Given content has length " + content.length + ", while content length of segment " + segInd + " should be " + expectedContentSize);
             }
         }
         else if (content.length > expectedContentSize) {
