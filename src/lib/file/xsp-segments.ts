@@ -541,8 +541,7 @@ export class SegWriter extends SegInfoHolder implements xsp.SegmentsWriter {
 		this.segChains = [ {
 			numOfSegs: null,
 			lastSegSize: null,
-			nonce: this.randomBytes(24),
-			extendable: true
+			nonce: this.randomBytes(24)
 		} ];
 	}
 	
