@@ -29,7 +29,8 @@
     "encryption",
     "high-level",
     "crypto",
-    "nacl"
+    "nacl",
+    "scrypt"
   ],
   "contributors": [
     {
