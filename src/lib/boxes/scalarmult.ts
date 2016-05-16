@@ -146,9 +146,9 @@ function mult121665(out: Uint32Array, a: Uint32Array): void {
 		out[j] = u & 255;
 		u >>>= 8;
 	}
-	u += out[j];
+	u += out[31];
 	u &= 0xffffffff;
-	out[j] = u;
+	out[31] = u;
 }
 
 /**
@@ -205,7 +205,7 @@ function select(p: Uint32Array, q: Uint32Array, r: Uint32Array,
 /**
  * Analog of mainloop in crypto_scalarmult/curve25519/ref/smult.c
  * @param work is Uint32Array, 64 items long.
- * @param e is Uint32Array, 32 items long.
+ * @param e is Uint8Array, 32 items long.
  * @param arrFactory is typed arrays factory, used to allocated/find an array
  * for use.
  */
@@ -367,7 +367,7 @@ export function curve25519(q: Uint8Array, n: Uint8Array, p: Uint8Array,
 		arrFactory: arrays.Factory): void {
 	
 	var work = arrFactory.getUint32Array(96);
-	var e = arrFactory.getUint32Array(32);
+	var e = arrFactory.getUint8Array(32);
 
 	e.set(n);
 	e[0] &= 248;

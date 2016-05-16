@@ -46,7 +46,7 @@ function stream_salsa20(c: Uint8Array, n: Uint8Array, k: Uint8Array,
 		core.salsa20(outArr,inArr,k,SIGMA);
 		
 		u = 1;
-		for (var i=8; i<16; i+=1) {
+		for (var i=8; i < 16; i+=1) {
 			u += inArr[i];
 			u &= 0xffffffff;
 			inArr[i] = u;
@@ -60,8 +60,8 @@ function stream_salsa20(c: Uint8Array, n: Uint8Array, k: Uint8Array,
 	if (clen > 0) {
 		var block = arrFactory.getUint8Array(64);
 		core.salsa20(block,inArr,k,SIGMA);
-		for (i = 0;i < clen;++i) {
-			c[i] = block[i];
+		for (var i=0; i < clen; i+=1) {
+			c[cstart+i] = block[i];
 		}
 		arrFactory.recycle(block);
 	}

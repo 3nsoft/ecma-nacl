@@ -75,7 +75,8 @@ function calc_dhshared_key(pk, sk, arrFactory) {
 exports.calc_dhshared_key = calc_dhshared_key;
 /**
  * Analog of crypto_box in crypto_box/curve25519xsalsa20poly1305/ref/box.c
- * @param m is Uint8Array of message bytes that need to be encrypted by secret key.
+ * @param m is Uint8Array of message bytes that need to be encrypted to given
+ * secret and public keys.
  * @param n is Uint8Array, 24 bytes long nonce.
  * @param pk is Uint8Array, 32 bytes long public key of message receiving party.
  * @param sk is Uint8Array, 32 bytes long secret key of message sending party.
@@ -615,7 +616,7 @@ function freeze(h, arrFactory) {
     var horig = arrFactory.getUint32Array(17);
     horig.set(h);
     add(h, minusp);
-    var negative = -(h[16] >> 7);
+    var negative = -(h[16] >>> 7);
     negative &= 0xffffffff;
     for (var j = 0; j < 17; j += 1) {
         h[j] ^= negative & (horig[j] ^ h[j]);
@@ -858,9 +859,9 @@ function mult121665(out, a) {
         out[j] = u & 255;
         u >>>= 8;
     }
-    u += out[j];
+    u += out[31];
     u &= 0xffffffff;
-    out[j] = u;
+    out[31] = u;
 }
 /**
  * Analog of square in crypto_scalarmult/curve25519/ref/smult.c
@@ -913,7 +914,7 @@ function select(p, q, r, s, b) {
 /**
  * Analog of mainloop in crypto_scalarmult/curve25519/ref/smult.c
  * @param work is Uint32Array, 64 items long.
- * @param e is Uint32Array, 32 items long.
+ * @param e is Uint8Array, 32 items long.
  * @param arrFactory is typed arrays factory, used to allocated/find an array
  * for use.
  */
@@ -1065,7 +1066,7 @@ function recip(out, z, arrFactory) {
  */
 function curve25519(q, n, p, arrFactory) {
     var work = arrFactory.getUint32Array(96);
-    var e = arrFactory.getUint32Array(32);
+    var e = arrFactory.getUint8Array(32);
     e.set(n);
     e[0] &= 248;
     e[31] &= 127;
@@ -1210,7 +1211,6 @@ function open(c, n, k, arrFactory) {
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
     }
-    var m = new Uint8Array(c.length + 16);
     var subkey = arrFactory.getUint8Array(32);
     stream.xsalsa20(subkey, n, k, arrFactory);
     var polyPartOfC = c.subarray(0, 16);
@@ -1220,14 +1220,14 @@ function open(c, n, k, arrFactory) {
         err.failedCipherVerification = true;
         throw err;
     }
+    var m = new Uint8Array(c.length + 16);
     stream.xsalsa20_xor(m, c, 16, n, k, arrFactory);
-    for (var i = 0; i < 32; i++) {
+    for (var i = 0; i < 32; i += 1) {
         m[i] = 0;
     }
     arrFactory.recycle(subkey);
     arrFactory.wipeRecycled();
-    m = m.subarray(32);
-    return m;
+    return m.subarray(32);
 }
 exports.open = open;
 /**
@@ -1312,14 +1312,14 @@ var formatWN;
      * Note that key will be copied, thus, if given array shall never be used anywhere, it should
      * be wiped after this call.
      * @param nextNonce is nonce, which should be used for the very first packing.
-     * All further packing will be done with new nonce, as it is automatically evenly advanced.
+     * All further packing will be done with new nonce, as it is automatically advanced.
      * Note that nextNonce will be copied.
      * @param delta is a number between 1 and 255 inclusive, used to advance nonce.
      * When missing, it defaults to one.
      * @param arrFactory is typed arrays factory, used to allocated/find an array for use.
      * It may be undefined, in which case an internally created one is used.
      * @return a frozen object with pack & open functions, and destroy
-     * It is NaCl's secret box for a given key, with automatically evenly advancing nonce.
+     * It is NaCl's secret box for a given key, with automatically advancing nonce.
      */
     function makeEncryptor(key, nextNonce, delta, arrFactory) {
         if (!(nextNonce instanceof Uint8Array)) {
@@ -1482,8 +1482,8 @@ function stream_salsa20(c, n, k, arrFactory) {
     if (clen > 0) {
         var block = arrFactory.getUint8Array(64);
         core.salsa20(block, inArr, k, exports.SIGMA);
-        for (i = 0; i < clen; ++i) {
-            c[i] = block[i];
+        for (var i = 0; i < clen; i += 1) {
+            c[cstart + i] = block[i];
         }
         arrFactory.recycle(block);
     }
@@ -1775,8 +1775,8 @@ var SegInfoHolder = (function () {
         if (!this.isEndlessFile()) {
             throw new Error("Cannot set an end to an already finite file.");
         }
-        if ((totalContentLen > 0xffffffffffff) || (totalContentLen < 0)) {
-            throw new Error("File length is out of bounds for this implementation.");
+        if (totalContentLen < 0) {
+            throw new Error("File length is out of bounds.");
         }
         if (totalContentLen === 0) {
             this.totalContentLen = 0;
@@ -1785,13 +1785,17 @@ var SegInfoHolder = (function () {
             this.segChains = [];
         }
         else {
-            this.totalContentLen = totalContentLen;
-            var numOfEvenSegs = Math.floor(this.totalContentLen / (this.segSize - 16));
-            this.totalNumOfSegments = numOfEvenSegs;
-            if (numOfEvenSegs * (this.segSize - 16) !== this.totalContentLen) {
-                this.totalNumOfSegments += 1;
+            var numOfSegs = Math.floor(totalContentLen / (this.segSize - 16));
+            if (numOfSegs * (this.segSize - 16) != totalContentLen) {
+                numOfSegs += 1;
             }
-            this.totalSegsLen = this.totalContentLen + 16 * this.totalNumOfSegments;
+            var totalSegsLen = totalContentLen + 16 * numOfSegs;
+            if (totalSegsLen > 0xffffffffff) {
+                throw new Error("Content length is out of bounds.");
+            }
+            this.totalContentLen = totalContentLen;
+            this.totalNumOfSegments = numOfSegs;
+            this.totalSegsLen = totalSegsLen;
             var segChain = this.segChains[0];
             segChain.numOfSegs = this.totalNumOfSegments;
             segChain.lastSegSize = this.totalSegsLen - (this.totalNumOfSegments - 1) * this.segSize;
@@ -1881,13 +1885,14 @@ var SegInfoHolder = (function () {
             var offset = 6;
             for (var i = 0; i < this.segChains.length; i += 1) {
                 segChain = this.segChains[i];
-                offset += i * 30;
                 // 3.1) 4 bytes with number of segments in this chain
                 storeUintIn4Bytes(head, offset, segChain.numOfSegs);
                 // 3.2) 2 bytes with this chain's last segments size
                 storeUintIn2Bytes(head, offset + 4, segChain.lastSegSize);
                 // 3.3) 24 bytes with the first nonce in this chain
                 head.set(segChain.nonce, offset + 6);
+                // add an offset
+                offset += 30;
             }
         }
         return head;
@@ -1959,7 +1964,6 @@ var SegReader = (function (_super) {
             throw new Error("Given key has wrong size.");
         }
         this.key = new Uint8Array(key);
-        header = header.subarray(72);
         if (header.length === 65) {
             this.initForEndlessFile(header, this.key, this.arrFactory);
         }
@@ -1976,7 +1980,10 @@ var SegReader = (function (_super) {
         var nonce = this.getSegmentNonce(segInd, this.arrFactory);
         var segLen = this.segmentSize(segInd);
         if (seg.length < segLen) {
-            if (!this.isEndlessFile()) {
+            if (this.isEndlessFile()) {
+                isLastSeg = true;
+            }
+            else {
                 throw new Error("Given byte array is smaller than segment's size.");
             }
         }
@@ -2275,7 +2282,7 @@ var KeyHolder = (function () {
         return writer.wrap();
     };
     KeyHolder.prototype.segReader = function (header) {
-        var reader = new segments.SegReader(this.key, header, this.arrFactory);
+        var reader = new segments.SegReader(this.key, header.subarray(KEY_PACK_LENGTH), this.arrFactory);
         return reader.wrap();
     };
     KeyHolder.prototype.destroy = function () {
@@ -2301,7 +2308,9 @@ var KeyHolder = (function () {
         return wrap;
     };
     KeyHolder.prototype.clone = function (arrFactory) {
-        var kh = new KeyHolder(this.key, this.keyPack, arrFactory);
+        var key = new Uint8Array(this.key.length);
+        key.set(this.key);
+        var kh = new KeyHolder(key, this.keyPack, arrFactory);
         return kh.wrap();
     };
     return KeyHolder;
@@ -3158,7 +3167,7 @@ function smix(B, r, N, V, XY, progress, arrFactory) {
     nextProgInd = progress.deltaN;
     /* 6: for i = 0 to N - 1 do */
     var j;
-    for (i = 0; i < N; i += 1) {
+    for (var i = 0; i < N; i += 1) {
         /* 7: j <-- Integerify(X) mod N */
         j = integerifyAndMod(X, r, N);
         /* 8: X <-- H(X \xor V_j) */
@@ -3358,10 +3367,10 @@ function hash_padded_block(h, oddBytes, totalLen, arrFactory) {
         for (var i = oddLen + 1; i < 56; i += 1) {
             padded[i] = 0;
         }
-        padded[56] = bits[0] >>> 56;
-        padded[57] = bits[0] >>> 48;
-        padded[58] = bits[0] >>> 40;
-        padded[59] = bits[0] >>> 32;
+        padded[56] = bits[0] >>> 24;
+        padded[57] = bits[0] >>> 16;
+        padded[58] = bits[0] >>> 8;
+        padded[59] = bits[0];
         padded[60] = bits[1] >>> 24;
         padded[61] = bits[1] >>> 16;
         padded[62] = bits[1] >>> 8;
@@ -3372,10 +3381,10 @@ function hash_padded_block(h, oddBytes, totalLen, arrFactory) {
         for (var i = oddLen + 1; i < 120; i += 1) {
             padded[i] = 0;
         }
-        padded[120] = bits[0] >>> 56;
-        padded[121] = bits[0] >>> 48;
-        padded[122] = bits[0] >>> 40;
-        padded[123] = bits[0] >>> 32;
+        padded[120] = bits[0] >>> 24;
+        padded[121] = bits[0] >>> 16;
+        padded[122] = bits[0] >>> 8;
+        padded[123] = bits[0];
         padded[124] = bits[1] >>> 24;
         padded[125] = bits[1] >>> 16;
         padded[126] = bits[1] >>> 8;
@@ -5503,18 +5512,50 @@ exports.wipe = wipe;
 Object.freeze(exports);
 
 },{}],18:[function(require,module,exports){
-/* Copyright(c) 2013 - 2015 3NSoft Inc.
+/* Copyright(c) 2013 - 2016 3NSoft Inc.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
-function loadLEU32(x, i) {
-    return (x[i + 3] << 24) | (x[i + 2] << 16) | (x[i + 1] << 8) | x[i];
+/**
+ * @param u is a U64 object
+ */
+function u64To52(u) {
+    if (u[1] > 0xfffff) {
+        return;
+    }
+    return u[1] * 0x100000000 + u[0];
 }
-function storeLEU32(x, i, u) {
-    x[i + 3] = u >>> 24;
-    x[i + 2] = u >>> 16;
-    x[i + 1] = u >>> 8;
-    x[i] = u;
+exports.u64To52 = u64To52;
+function addU64(a, b) {
+    var l = a[0] + b[0];
+    var h = a[1] + b[1] + ((l / 0x100000000) | 0);
+    return new Uint32Array([l, h]);
+}
+function subU64(a, b) {
+    var h = a[1] - b[1];
+    var l = a[0] - b[0];
+    if (l < 0) {
+        h -= 1;
+        l += 0x100000000;
+    }
+    return new Uint32Array([l, h]);
+}
+// XXX read 64 bytes, into obj that represents 64 number and has addition
+//		read/write and call of storing ops should be adjusted
+function loadLEU64(x, i) {
+    var l = (x[i + 3] << 24) | (x[i + 2] << 16) | (x[i + 1] << 8) | x[i];
+    var h = (x[i + 7] << 24) | (x[i + 6] << 16) | (x[i + 5] << 8) | x[i + 4];
+    return new Uint32Array([l, h]);
+}
+function storeLEU64(x, i, u) {
+    x[i + 7] = u[1] >>> 24;
+    x[i + 6] = u[1] >>> 16;
+    x[i + 5] = u[1] >>> 8;
+    x[i + 4] = u[1];
+    x[i + 3] = u[0] >>> 24;
+    x[i + 2] = u[0] >>> 16;
+    x[i + 1] = u[0] >>> 8;
+    x[i] = u[0];
 }
 /**
  * This takes a given 24-byte nonce as three 8-byte numbers, and adds
@@ -5529,8 +5570,9 @@ function advance(n, delta) {
     if ((delta < 1) || (delta > 255)) {
         throw new Error("Given delta is out of limits.");
     }
+    var deltaU64 = new Uint32Array([delta, 0]);
     for (var i = 0; i < 3; i += 1) {
-        storeLEU32(n, i * 4, (loadLEU32(n, i * 4) + delta));
+        storeLEU64(n, i * 8, addU64(loadLEU64(n, i * 8), deltaU64));
     }
 }
 exports.advance = advance;
@@ -5555,15 +5597,24 @@ exports.advanceEvenly = advanceEvenly;
 /**
  * @param initNonce
  * @param delta
+ * @param arrFactory is an optional factory, which provides array for a
+ * calculated nonce.
  * @return new nonce, calculated from an initial one by adding a delta to it.
  */
 function calculateNonce(initNonce, delta, arrFactory) {
-    if ((delta > 0xffffffff) || (delta < 0)) {
-        throw new Error("Given delta is out of limits.");
+    var deltaU64;
+    if (typeof delta === 'number') {
+        if ((delta > 0xfffffffffffff) || (delta < 0)) {
+            throw new Error("Given delta is out of limits.");
+        }
+        deltaU64 = new Uint32Array([delta, delta / 0x100000000]);
     }
-    var n = arrFactory.getUint8Array(24);
+    else {
+        deltaU64 = delta;
+    }
+    var n = (arrFactory ? arrFactory.getUint8Array(24) : new Uint8Array(24));
     for (var i = 0; i < 3; i += 1) {
-        storeLEU32(n, i * 4, (loadLEU32(initNonce, i * 4) + delta));
+        storeLEU64(n, i * 8, addU64(loadLEU64(initNonce, i * 8), deltaU64));
     }
     return n;
 }
@@ -5571,19 +5622,18 @@ exports.calculateNonce = calculateNonce;
 /**
  * @param n1
  * @param n2
- * @return delta (unsigned 32-bit integer), which, when added to the first
+ * @return delta (unsigned 64-bit integer), which, when added to the first
  * nonce (n1), produces the second nonce (n2).
- * Null is returned, if given nonces are not related to each other.
+ * Undefined is returned, if given nonces are not related to each other.
  */
 function calculateDelta(n1, n2) {
-    var delta = loadLEU32(n2, 0) - loadLEU32(n1, 0);
+    var delta = subU64(loadLEU64(n2, 0), loadLEU64(n1, 0));
+    var dx;
     for (var i = 1; i < 3; i += 1) {
-        if (delta !== (loadLEU32(n2, i * 4) - loadLEU32(n1, i * 4))) {
-            return null;
+        dx = subU64(loadLEU64(n2, i * 8), loadLEU64(n1, i * 8));
+        if ((delta[0] !== dx[0]) || (delta[1] !== dx[1])) {
+            return;
         }
-    }
-    if (delta < 0) {
-        delta += 0x100000000;
     }
     return delta;
 }

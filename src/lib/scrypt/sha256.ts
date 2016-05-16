@@ -158,10 +158,10 @@ function hash_padded_block(h: Uint32Array, oddBytes: Uint8Array,
 		for (var i=oddLen+1; i<56; i+=1) {
 			padded[i] = 0;
 		}
-		padded[56] = bits[0] >>> 56;
-		padded[57] = bits[0] >>> 48;
-		padded[58] = bits[0] >>> 40;
-		padded[59] = bits[0] >>> 32;
+		padded[56] = bits[0] >>> 24;
+		padded[57] = bits[0] >>> 16;
+		padded[58] = bits[0] >>> 8;
+		padded[59] = bits[0];
 		padded[60] = bits[1] >>> 24;
 		padded[61] = bits[1] >>> 16;
 		padded[62] = bits[1] >>> 8;
@@ -171,10 +171,10 @@ function hash_padded_block(h: Uint32Array, oddBytes: Uint8Array,
 		for (var i=oddLen+1; i<120; i+=1) {
 			padded[i] = 0;
 		}
-		padded[120] = bits[0] >>> 56;
-		padded[121] = bits[0] >>> 48;
-		padded[122] = bits[0] >>> 40;
-		padded[123] = bits[0] >>> 32;
+		padded[120] = bits[0] >>> 24;
+		padded[121] = bits[0] >>> 16;
+		padded[122] = bits[0] >>> 8;
+		padded[123] = bits[0];
 		padded[124] = bits[1] >>> 24;
 		padded[125] = bits[1] >>> 16;
 		padded[126] = bits[1] >>> 8;

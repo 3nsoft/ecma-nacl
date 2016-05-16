@@ -243,18 +243,18 @@ So, you should obtain cryptographically strong random bytes yourself. In node, t
 
 Scrypt derives a key from users password.
 Algorithm is memory-hard, which means it uses lots and lots of memory.
-There are three parameters that go into derivation: ``` N```,
-``` r``` and
-``` p``` .
+There are three parameters that go into derivation: ``` N ``` ,
+``` r ``` and
+``` p ``` .
 
-Amount of memory used is roughly ``` 128 * N * r == r * 2^(7+logN)``` bytes.
-With ``` r = 8```,
-when ``` logN``` is 10, it is a MB range of memory,
-when ``` logN``` is 20, it is a GB range of memory in use.
+Amount of memory used is roughly ``` 128 * N * r == r * 2^(7+logN) ```  bytes.
+With ``` r = 8 ``` ,
+when ``` logN ```  is 10, it is a MB range of memory,
+when ``` logN ```  is 20, it is a GB range of memory in use.
 
-Parameter ``` p``` says how many times should the whole operation occur.
+Parameter ``` p ```  says how many times should the whole operation occur.
 So, when running out of memory (js is not giving enough memory for ``` logN = 20```
-), one may up ``` p``` value.
+), one may up ``` p ```  value.
 
 It goes without saying, that such operations take time, and this implementation has a callback for progress reporting.
 

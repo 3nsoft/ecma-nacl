@@ -1,8 +1,9 @@
 {
   "name": "ecma-nacl",
-  "version": "2.2.1",
+  "version": "2.3.1",
   "description": "JavaScript (ECMAScript) version of NaCl Cryptographic library",
   "main": "./dist/lib/ecma-nacl.js",
+  "typings": "./lib declarations/ecma-nacl.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/3nsoft/ecma-nacl.git"
@@ -16,6 +17,7 @@
     "gulp-nodeunit-runner": "^0.2.2",
     "gulp-rename": "^1.2.2",
     "gulp-streamify": "0.0.5",
+    "gulp-typedoc": "^1.1.0",
     "gulp-typescript": "^2.6.0",
     "gulp-uglify": "^1.2.0",
     "js-nacl": "^0.6.0",
@@ -30,7 +32,7 @@
     "high-level",
     "crypto",
     "nacl",
-    "scrypt"
+	 "scrypt"
   ],
   "contributors": [
     {
@@ -38,9 +40,6 @@
       "email": "mikalai@birukou.net"
     }
   ],
-  "license": {
-    "type": "MPLv2.0",
-    "url": "http://mozilla.org/MPL/2.0/"
-  },
+  "license": "MPL-2.0",
   "readmeFilename": "README.md"
 }

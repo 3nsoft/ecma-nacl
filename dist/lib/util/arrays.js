@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 /**
  * This module provide an object pool for typed arrays used in the library.
  * When we turn off reusing, by always making new arrays, time for boxes goes up
@@ -77,7 +78,7 @@ var NumericArrPool = (function () {
         this.wipedIndex = this.poolIndex;
     };
     return NumericArrPool;
-})();
+}());
 function makeFactory() {
     var f = new ArrFactory();
     return {
@@ -131,8 +132,10 @@ var ArrFactory = (function () {
             arr = arrays[i];
             if (!arr)
                 continue;
-            if ((arr.byteOffset !== 0) || (arr.length * arr.BYTES_PER_ELEMENT !== arr.buffer.byteLength)) {
-                throw new TypeError("Given, as argument #" + (i + 1) + " is a view " + "of an array, and these are not supposed to be recycled.");
+            if ((arr.byteOffset !== 0) ||
+                (arr.length * arr.BYTES_PER_ELEMENT !== arr.buffer.byteLength)) {
+                throw new TypeError("Given, as argument #" + (i + 1) + " is a view " +
+                    "of an array, and these are not supposed to be recycled.");
             }
             if (arr instanceof Uint8Array) {
                 this.recycleUint8Array(arr);
@@ -141,7 +144,9 @@ var ArrFactory = (function () {
                 this.recycleUint32Array(arr);
             }
             else {
-                throw new TypeError("This works with typed arrays that have 1 or 4 bytes " + "per element, while given at position " + i + " array claims to have " + arr.BYTES_PER_ELEMENT);
+                throw new TypeError("This works with typed arrays that have 1 or 4 bytes " +
+                    "per element, while given at position " + i +
+                    " array claims to have " + arr.BYTES_PER_ELEMENT);
             }
         }
     };
@@ -162,7 +167,7 @@ var ArrFactory = (function () {
         }
     };
     return ArrFactory;
-})();
+}());
 Object.freeze(ArrFactory);
 Object.freeze(ArrFactory.prototype);
 /**
@@ -185,8 +190,7 @@ function wipe() {
                 arr[j] = 0;
             }
         }
-        catch (e) {
-        }
+        catch (e) { }
     }
 }
 exports.wipe = wipe;

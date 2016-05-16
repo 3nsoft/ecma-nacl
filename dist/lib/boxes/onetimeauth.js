@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 var verify = require('../util/verify');
 /**
  * Analog of add in crypto_onetimeauth/poly1305/ref/auth.c
@@ -59,7 +60,7 @@ function freeze(h, arrFactory) {
     var horig = arrFactory.getUint32Array(17);
     horig.set(h);
     add(h, minusp);
-    var negative = -(h[16] >> 7);
+    var negative = -(h[16] >>> 7);
     negative &= 0xffffffff;
     for (var j = 0; j < 17; j += 1) {
         h[j] ^= negative & (horig[j] ^ h[j]);

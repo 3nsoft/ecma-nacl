@@ -267,7 +267,7 @@ function smix(B: Uint8Array, r: number, N: number, V: Uint8Array,
 	
 	/* 6: for i = 0 to N - 1 do */
 	var j: number;
-	for (i=0; i<N; i+=1) {
+	for (var i=0; i<N; i+=1) {
 		/* 7: j <-- Integerify(X) mod N */
 		j = integerifyAndMod(X, r, N);
 

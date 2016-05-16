@@ -11,6 +11,7 @@ var streamify = require('gulp-streamify');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 var nodeunit = require("gulp-nodeunit-runner");
+var typedoc = require("gulp-typedoc");
 
 var SRC = 'src';
 var DIST = 'dist';
@@ -102,9 +103,21 @@ gulp.task('run-unittest', [ 'test-node' ], function() {
 	              DIST+'/test-node/file/*.js',
 	              DIST+'/test-node/hash/*.js',
 	              DIST+'/test-node/scrypt/*.js',
-	              DIST+'/test-node/sign/*.js' ];
+	              DIST+'/test-node/signing/*.js',
+					  DIST+'/test-node/util/*.js' ];
 	return gulp.src(tests)
 	.pipe(nodeunit());
+});
+
+gulp.task('code-docs', function() {
+	return gulp.src([ SRC+'/**/*.ts', SRC+'/typings/**/*' ])
+	.pipe(typedoc({
+		module: 'commonjs',
+		out: DIST+'/code-docs',
+		name: 'Ecma-NaCl',
+		target: 'es5',
+		ignoreCompilerErrors: true
+	}));
 });
 
 gulp.task('run-performance', [ 'test-node' ], function() {
@@ -128,7 +141,9 @@ gulp.task('help', function() {
 		'\t3) "run-unittest" task runs unit tests;\n'+
 		'\t4) "run-performance" task runs timing code;\n'+
 		'\t5) "run-comparison" task runs comparisons to other NaCl implementing'+
-		' libraries.\n\n'+
+		' libraries;\n'+
+		'\t6) "code-docs" task uses TypeDoc to generate dist/code-docs pages,'+
+		'picking up all of source documentation.\n\n'+
 		'After complete compilation, one may run performance and comparison'+
 		' code in browser, opening test pages, located in dist/test-browser'+
 		' folder.';

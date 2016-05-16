@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 var ge = require('./ge25519');
 var sc = require('./sc25519');
 var sha512 = require('../hash/sha512');
@@ -15,7 +16,9 @@ function generate_keypair(seed, arrFactory) {
         throw new TypeError("Seed must be Uint8Array.");
     }
     if (seed.length !== 32) {
-        throw new Error("Seed should have 32 " + "elements (bytes) in it, but it is " + seed.length + " elements long.");
+        throw new Error("Seed should have 32 " +
+            "elements (bytes) in it, but it is " + seed.length +
+            " elements long.");
     }
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
@@ -49,7 +52,8 @@ function extract_pkey(sk) {
         throw new TypeError("Key array sk must be Uint8Array.");
     }
     if (sk.length !== 64) {
-        throw new Error("Key array sk should have 64 " + "elements (bytes) in it, but it is " + sk.length + " elements long.");
+        throw new Error("Key array sk should have 64 " +
+            "elements (bytes) in it, but it is " + sk.length + " elements long.");
     }
     var pk = new Uint8Array(32);
     for (var i = 32; i < 64; i += 1) {
@@ -66,7 +70,8 @@ function sign(m, sk, arrFactory) {
         throw new TypeError("Key array sk must be Uint8Array.");
     }
     if (sk.length !== 64) {
-        throw new Error("Key array sk should have 64 " + "elements (bytes) in it, but it is " + sk.length + " elements long.");
+        throw new Error("Key array sk should have 64 " +
+            "elements (bytes) in it, but it is " + sk.length + " elements long.");
     }
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
@@ -114,7 +119,8 @@ function signature(m, sk, arrFactory) {
         throw new TypeError("Key array sk must be Uint8Array.");
     }
     if (sk.length !== 64) {
-        throw new Error("Key array sk should have 64 " + "elements (bytes) in it, but it is " + sk.length + " elements long.");
+        throw new Error("Key array sk should have 64 " +
+            "elements (bytes) in it, but it is " + sk.length + " elements long.");
     }
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
@@ -170,7 +176,8 @@ function open(sm, pk, arrFactory) {
         throw new TypeError("Key array pk must be Uint8Array.");
     }
     if (pk.length !== 32) {
-        throw new Error("Key array pk should have 32 " + "elements (bytes) in it, but it is " + pk.length + " elements long.");
+        throw new Error("Key array pk should have 32 " +
+            "elements (bytes) in it, but it is " + pk.length + " elements long.");
     }
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
@@ -181,7 +188,8 @@ function open(sm, pk, arrFactory) {
     var get2 = ge.make_ge25519(arrFactory);
     var schram = sc.make_sc25519(arrFactory);
     var scs = sc.make_sc25519(arrFactory);
-    if ((sm.length < 64) || (sm[63] & 224) || !ge.unpackneg_vartime(get1, pk, arrFactory)) {
+    if ((sm.length < 64) || (sm[63] & 224) ||
+        !ge.unpackneg_vartime(get1, pk, arrFactory)) {
         return null;
     }
     rcopy.set(sm.subarray(0, 32));
@@ -208,7 +216,8 @@ function verify(sig, m, pk, arrFactory) {
         throw new TypeError("Key array pk must be Uint8Array.");
     }
     if (pk.length !== 32) {
-        throw new Error("Key array pk should have 32 " + "elements (bytes) in it, but it is " + pk.length + " elements long.");
+        throw new Error("Key array pk should have 32 " +
+            "elements (bytes) in it, but it is " + pk.length + " elements long.");
     }
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
@@ -219,7 +228,8 @@ function verify(sig, m, pk, arrFactory) {
     var get2 = ge.make_ge25519(arrFactory);
     var schram = sc.make_sc25519(arrFactory);
     var scs = sc.make_sc25519(arrFactory);
-    if ((sig.length < 64) || (sig[63] & 224) || !ge.unpackneg_vartime(get1, pk, arrFactory)) {
+    if ((sig.length < 64) || (sig[63] & 224) ||
+        !ge.unpackneg_vartime(get1, pk, arrFactory)) {
         return false;
     }
     rcopy.set(sig.subarray(0, 32));

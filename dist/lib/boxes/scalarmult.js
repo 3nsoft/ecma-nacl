@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 /**
  * Analog of add in crypto_scalarmult/curve25519/ref/smult.c
  * @param out is Uint32Array, 32 items long.
@@ -69,7 +70,8 @@ function squeeze(a) {
  * minusp array in crypto_scalarmult/curve25519/ref/smult.c
  * Length === 32.
  */
-var minusp = new Uint32Array([19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128]);
+var minusp = new Uint32Array([19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128]);
 /**
  * Analog of freeze in crypto_scalarmult/curve25519/ref/smult.c
  * @param a is Uint32Array, 32 items long.
@@ -133,9 +135,9 @@ function mult121665(out, a) {
         out[j] = u & 255;
         u >>>= 8;
     }
-    u += out[j];
+    u += out[31];
     u &= 0xffffffff;
-    out[j] = u;
+    out[31] = u;
 }
 /**
  * Analog of square in crypto_scalarmult/curve25519/ref/smult.c
@@ -188,7 +190,7 @@ function select(p, q, r, s, b) {
 /**
  * Analog of mainloop in crypto_scalarmult/curve25519/ref/smult.c
  * @param work is Uint32Array, 64 items long.
- * @param e is Uint32Array, 32 items long.
+ * @param e is Uint8Array, 32 items long.
  * @param arrFactory is typed arrays factory, used to allocated/find an array
  * for use.
  */
@@ -282,42 +284,42 @@ function recip(out, z, arrFactory) {
     /* 2^10 - 2^0 */ mult(z2_10_0, t0, z2_5_0);
     /* 2^11 - 2^1 */ square(t0, z2_10_0);
     /* 2^12 - 2^2 */ square(t1, t0);
-    for (var i = 2; i < 10; i += 2) {
+    /* 2^20 - 2^10 */ for (var i = 2; i < 10; i += 2) {
         square(t0, t1);
         square(t1, t0);
     }
     /* 2^20 - 2^0 */ mult(z2_20_0, t1, z2_10_0);
     /* 2^21 - 2^1 */ square(t0, z2_20_0);
     /* 2^22 - 2^2 */ square(t1, t0);
-    for (var i = 2; i < 20; i += 2) {
+    /* 2^40 - 2^20 */ for (var i = 2; i < 20; i += 2) {
         square(t0, t1);
         square(t1, t0);
     }
     /* 2^40 - 2^0 */ mult(t0, t1, z2_20_0);
     /* 2^41 - 2^1 */ square(t1, t0);
     /* 2^42 - 2^2 */ square(t0, t1);
-    for (var i = 2; i < 10; i += 2) {
+    /* 2^50 - 2^10 */ for (var i = 2; i < 10; i += 2) {
         square(t1, t0);
         square(t0, t1);
     }
     /* 2^50 - 2^0 */ mult(z2_50_0, t0, z2_10_0);
     /* 2^51 - 2^1 */ square(t0, z2_50_0);
     /* 2^52 - 2^2 */ square(t1, t0);
-    for (var i = 2; i < 50; i += 2) {
+    /* 2^100 - 2^50 */ for (var i = 2; i < 50; i += 2) {
         square(t0, t1);
         square(t1, t0);
     }
     /* 2^100 - 2^0 */ mult(z2_100_0, t1, z2_50_0);
     /* 2^101 - 2^1 */ square(t1, z2_100_0);
     /* 2^102 - 2^2 */ square(t0, t1);
-    for (var i = 2; i < 100; i += 2) {
+    /* 2^200 - 2^100 */ for (var i = 2; i < 100; i += 2) {
         square(t1, t0);
         square(t0, t1);
     }
     /* 2^200 - 2^0 */ mult(t1, t0, z2_100_0);
     /* 2^201 - 2^1 */ square(t0, t1);
     /* 2^202 - 2^2 */ square(t1, t0);
-    for (var i = 2; i < 50; i += 2) {
+    /* 2^250 - 2^50 */ for (var i = 2; i < 50; i += 2) {
         square(t0, t1);
         square(t1, t0);
     }
@@ -340,7 +342,7 @@ function recip(out, z, arrFactory) {
  */
 function curve25519(q, n, p, arrFactory) {
     var work = arrFactory.getUint32Array(96);
-    var e = arrFactory.getUint32Array(32);
+    var e = arrFactory.getUint8Array(32);
     e.set(n);
     e[0] &= 248;
     e[31] &= 127;

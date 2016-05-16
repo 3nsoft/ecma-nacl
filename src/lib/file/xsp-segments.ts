@@ -183,7 +183,7 @@ class SegInfoHolder {
 		this.totalNumOfSegments = 0;
 		var isHeaderOK = 1;		// 1 for OK, and 0 for not-OK
 		var offset = 6;
-		for (var i=0; i<this.segChains.length; i+=1) {
+		for (var i=0; i < this.segChains.length; i+=1) {
 			offset += i*30;
 			segChain = {
 				numOfSegs: loadUintFrom4Bytes(header, offset),
@@ -219,24 +219,24 @@ class SegInfoHolder {
 	setContentLength(totalContentLen: number): void {
 		if (!this.isEndlessFile()) { throw new Error(
 				"Cannot set an end to an already finite file."); }
-		if ((totalContentLen > 0xffffffffffff) ||
-				(totalContentLen < 0)) { throw new Error(
-				"File length is out of bounds for this implementation."); }
+		if (totalContentLen < 0) { throw new Error(
+				"File length is out of bounds."); }
 		if (totalContentLen === 0) {
 			this.totalContentLen = 0;
 			this.totalNumOfSegments = 0;
 			this.totalSegsLen = 0;
 			this.segChains = [];
 		} else {
-			this.totalContentLen = totalContentLen;
-			var numOfEvenSegs = Math.floor(
-					this.totalContentLen / (this.segSize - 16));
-			this.totalNumOfSegments = numOfEvenSegs;
-			if (numOfEvenSegs*(this.segSize-16) !== this.totalContentLen) {
-				this.totalNumOfSegments += 1;
+			var numOfSegs =  Math.floor(totalContentLen / (this.segSize - 16));
+			if (numOfSegs*(this.segSize-16) != totalContentLen) {
+				numOfSegs += 1;
 			}
-			this.totalSegsLen =
-					this.totalContentLen + 16*this.totalNumOfSegments;
+			var totalSegsLen = totalContentLen + 16*numOfSegs;
+			if (totalSegsLen > 0xffffffffff) {	throw new Error(
+					"Content length is out of bounds."); }
+			this.totalContentLen = totalContentLen;
+			this.totalNumOfSegments = numOfSegs;
+			this.totalSegsLen = totalSegsLen;
 			var segChain = this.segChains[0];
 			segChain.numOfSegs = this.totalNumOfSegments;
 			segChain.lastSegSize = this.totalSegsLen -
@@ -270,7 +270,7 @@ class SegInfoHolder {
 		var contentOffset = 0;
 		var segChain: ChainedSegsInfo;
 		var chainLen: number;
-		for (var i=0; i<this.segChains.length; i+=1) {
+		for (var i=0; i < this.segChains.length; i+=1) {
 			segChain = this.segChains[i];
 			chainLen = segChain.lastSegSize +
 					(segChain.numOfSegs - 1)*this.segSize;
@@ -324,15 +324,16 @@ class SegInfoHolder {
 			// 3) pack info about chained segments
 			var segChain: ChainedSegsInfo;
 			var offset = 6;
-			for (var i=0; i<this.segChains.length; i+=1) {
+			for (var i=0; i < this.segChains.length; i+=1) {
 				segChain = this.segChains[i];
-				offset += i*30;
 				// 3.1) 4 bytes with number of segments in this chain
 				storeUintIn4Bytes(head, offset, segChain.numOfSegs);
 				// 3.2) 2 bytes with this chain's last segments size
 				storeUintIn2Bytes(head, offset + 4, segChain.lastSegSize);
 				// 3.3) 24 bytes with the first nonce in this chain
 				head.set(segChain.nonce, offset + 6);
+				// add an offset
+				offset += 30;
 			}
 		}
 		return head;
@@ -354,7 +355,7 @@ class SegInfoHolder {
 				"Given segment index is out of bounds."); }
 		var segChain: ChainedSegsInfo;
 		var lastSegInd = 0;
-		for (var i=0; i<this.segChains.length; i+=1) {
+		for (var i=0; i < this.segChains.length; i+=1) {
 			segChain = this.segChains[i];
 			if ((lastSegInd + segChain.numOfSegs) <= segInd) {
 				lastSegInd += segChain.numOfSegs;
@@ -382,7 +383,7 @@ class SegInfoHolder {
 				"Given segment index is out of bounds."); }
 		var segChain: ChainedSegsInfo;
 		var lastSegInd = 0;
-		for (var i=0; i<this.segChains.length; i+=1) {
+		for (var i=0; i < this.segChains.length; i+=1) {
 			segChain = this.segChains[i];
 			if ((lastSegInd + segChain.numOfSegs) <= segInd) {
 				lastSegInd += segChain.numOfSegs;
@@ -417,7 +418,6 @@ export class SegReader extends SegInfoHolder implements xsp.SegmentsReader {
 		if (key.length !== sbox.KEY_LENGTH) { throw new Error(
 				"Given key has wrong size."); }
 		this.key = new Uint8Array(key);
-		header = header.subarray(72);
 		if (header.length === 65) {
 			this.initForEndlessFile(header, this.key, this.arrFactory);
 		} else {
@@ -431,12 +431,15 @@ export class SegReader extends SegInfoHolder implements xsp.SegmentsReader {
 	
 	openSeg(seg: Uint8Array, segInd: number):
 			{ data: Uint8Array; segLen: number; last?: boolean; } {
-		var isLastSeg = ((segInd + 1) === this.totalNumOfSegments)
+		var isLastSeg = ((segInd + 1) === this.totalNumOfSegments);
 		var nonce = this.getSegmentNonce(segInd, this.arrFactory);
 		var segLen = this.segmentSize(segInd);
 		if (seg.length < segLen) {
-			if (!this.isEndlessFile()) { throw new Error(
-					"Given byte array is smaller than segment's size."); }
+			if (this.isEndlessFile()) {
+				isLastSeg = true;
+			} else {
+				throw new Error("Given byte array is smaller than segment's size.");
+			}
 		} else if (seg.length > segLen) {
 			seg = seg.subarray(0, segLen);
 		}
@@ -576,7 +579,7 @@ export class SegWriter extends SegInfoHolder implements xsp.SegmentsWriter {
 	destroy(): void {
 		this.arrFactory.wipe(this.key);
 		this.key = null;
-		for (var i=0; i<this.segChains.length; i+=1) {
+		for (var i=0; i < this.segChains.length; i+=1) {
 			this.arrFactory.wipe(this.segChains[i].nonce);
 		}
 		this.segChains = null;

@@ -83,8 +83,7 @@ export function secretbox3(test: nu.Test) {
 	compare(test, result, c);
 	// but it is a buffer view that hides these zeros
 	compare(test, new Uint8Array(result.buffer, 0, result.length+16), c_padded);
-	arrFactory.wipe(result);
-	arrFactory.wipeRecycled();
+	test.equals(result.byteOffset, 16);
 	test.done();
 }
 
@@ -97,8 +96,7 @@ export function secretbox4(test: nu.Test) {
 	compare(test, result, m);
 	//but it is a buffer view that hides these zeros
 	compare(test, new Uint8Array(result.buffer, 0, result.length+32), m_padded);
-	arrFactory.wipe(result);
-	arrFactory.wipeRecycled();
+	test.equals(result.byteOffset, 32);
 	test.done();
 }
 
@@ -111,8 +109,6 @@ export function shortData(test: nu.Test) {
 	compare(test, result.subarray(16), c.subarray(16, 26));
 	result = sbox.open(result, nonce, firstkey, arrFactory);
 	compare(test, result, shortM);
-	arrFactory.wipe(result);
-	arrFactory.wipeRecycled();
 	test.done();
 }
 
@@ -120,16 +116,21 @@ export function shortData(test: nu.Test) {
  * Test opening of array with nonce and cipher
  */
 export function formatWN(test: nu.Test) {
-	// prepare array with nonce and cipher
-	var result = new Uint8Array(nonce.length+c.length);
-	result.set(nonce);
-	result.set(c, nonce.length);
-	result = sbox.formatWN.open(result, firstkey, arrFactory);
-	//result is message without the pad
-	compare(test, result, m);
-	//but it is a buffer view that hides these zeros
-	compare(test, new Uint8Array(result.buffer, 0, result.length+32), m_padded);
-	arrFactory.wipe(result);
-	arrFactory.wipeRecycled();
+	
+	var cWN = sbox.formatWN.pack(m, nonce, firstkey, arrFactory);
+	test.equals(cWN.length, c.length+24);
+	test.equals(cWN.length, m.length+40);
+	test.equals(cWN.byteOffset, 0);
+	compare(test, cWN.subarray(0, 24), nonce);
+	compare(test, cWN.subarray(24), c);
+	
+	var mOpened = sbox.formatWN.open(cWN, firstkey, arrFactory);
+	test.equals(mOpened.byteOffset, 32);
+	compare(test, mOpened, m);
+	// it is a buffer view that hides initial 32 zeros
+	compare(test,
+		new Uint8Array(mOpened.buffer, 0, mOpened.length+32),
+		m_padded);
+	
 	test.done();
 }

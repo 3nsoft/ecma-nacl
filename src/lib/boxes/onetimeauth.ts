@@ -66,7 +66,7 @@ function freeze(h: Uint32Array, arrFactory: arrays.Factory): void {
 	var horig = arrFactory.getUint32Array(17);
 	horig.set(h);
 	add(h, minusp);
-	var negative = -(h[16] >> 7);
+	var negative = -(h[16] >>> 7);
 	negative &= 0xffffffff;
 	for (var j=0; j<17; j+=1) {
 		h[j] ^= negative & (horig[j] ^ h[j]);

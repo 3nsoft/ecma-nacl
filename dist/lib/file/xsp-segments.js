@@ -2,11 +2,11 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
-var __extends = this.__extends || function (d, b) {
+"use strict";
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var sbox = require('../boxes/secret_box');
 var nonceMod = require('../util/nonce');
@@ -92,10 +92,10 @@ var SegInfoHolder = (function () {
         this.totalNumOfSegments = null;
         this.segSize = (header[0] << 8);
         this.segChains = [{
-            numOfSegs: null,
-            lastSegSize: null,
-            nonce: new Uint8Array(header.subarray(1, 25))
-        }];
+                numOfSegs: null,
+                lastSegSize: null,
+                nonce: new Uint8Array(header.subarray(1, 25))
+            }];
         arrFactory.wipe(header);
     };
     /**
@@ -140,14 +140,19 @@ var SegInfoHolder = (function () {
             };
             this.segChains[i] = segChain;
             // collect totals
-            this.totalContentLen += segChain.lastSegSize + this.segSize * (segChain.numOfSegs - 1) - 16 * segChain.numOfSegs;
+            this.totalContentLen += segChain.lastSegSize +
+                this.segSize * (segChain.numOfSegs - 1) -
+                16 * segChain.numOfSegs;
             this.totalNumOfSegments += segChain.numOfSegs;
             // check consistency of segments' length information
-            isHeaderOK *= ((segChain.numOfSegs < 1) ? 0 : 1) * ((segChain.lastSegSize < 17) ? 0 : 1) * ((segChain.lastSegSize > this.segSize) ? 0 : 1);
+            isHeaderOK *= ((segChain.numOfSegs < 1) ? 0 : 1) *
+                ((segChain.lastSegSize < 17) ? 0 : 1) *
+                ((segChain.lastSegSize > this.segSize) ? 0 : 1);
         }
         arrFactory.wipe(header);
         // check consistency of totals
-        isHeaderOK *= ((this.totalSegsLen === ((this.totalContentLen + 16 * this.totalNumOfSegments))) ? 1 : 0);
+        isHeaderOK *= ((this.totalSegsLen ===
+            ((this.totalContentLen + 16 * this.totalNumOfSegments))) ? 1 : 0);
         if (isHeaderOK === 0) {
             throw new Error("Given header is malformed.");
         }
@@ -162,8 +167,8 @@ var SegInfoHolder = (function () {
         if (!this.isEndlessFile()) {
             throw new Error("Cannot set an end to an already finite file.");
         }
-        if ((totalContentLen > 0xffffffffffff) || (totalContentLen < 0)) {
-            throw new Error("File length is out of bounds for this implementation.");
+        if (totalContentLen < 0) {
+            throw new Error("File length is out of bounds.");
         }
         if (totalContentLen === 0) {
             this.totalContentLen = 0;
@@ -172,16 +177,21 @@ var SegInfoHolder = (function () {
             this.segChains = [];
         }
         else {
-            this.totalContentLen = totalContentLen;
-            var numOfEvenSegs = Math.floor(this.totalContentLen / (this.segSize - 16));
-            this.totalNumOfSegments = numOfEvenSegs;
-            if (numOfEvenSegs * (this.segSize - 16) !== this.totalContentLen) {
-                this.totalNumOfSegments += 1;
+            var numOfSegs = Math.floor(totalContentLen / (this.segSize - 16));
+            if (numOfSegs * (this.segSize - 16) != totalContentLen) {
+                numOfSegs += 1;
             }
-            this.totalSegsLen = this.totalContentLen + 16 * this.totalNumOfSegments;
+            var totalSegsLen = totalContentLen + 16 * numOfSegs;
+            if (totalSegsLen > 0xffffffffff) {
+                throw new Error("Content length is out of bounds.");
+            }
+            this.totalContentLen = totalContentLen;
+            this.totalNumOfSegments = numOfSegs;
+            this.totalSegsLen = totalSegsLen;
             var segChain = this.segChains[0];
             segChain.numOfSegs = this.totalNumOfSegments;
-            segChain.lastSegSize = this.totalSegsLen - (this.totalNumOfSegments - 1) * this.segSize;
+            segChain.lastSegSize = this.totalSegsLen -
+                (this.totalNumOfSegments - 1) * this.segSize;
         }
     };
     /**
@@ -215,7 +225,8 @@ var SegInfoHolder = (function () {
         var chainLen;
         for (var i = 0; i < this.segChains.length; i += 1) {
             segChain = this.segChains[i];
-            chainLen = segChain.lastSegSize + (segChain.numOfSegs - 1) * this.segSize;
+            chainLen = segChain.lastSegSize +
+                (segChain.numOfSegs - 1) * this.segSize;
             contentOffset += chainLen - 16 * segChain.numOfSegs;
             if (contentOffset <= pos) {
                 segInd += segChain.numOfSegs;
@@ -268,13 +279,14 @@ var SegInfoHolder = (function () {
             var offset = 6;
             for (var i = 0; i < this.segChains.length; i += 1) {
                 segChain = this.segChains[i];
-                offset += i * 30;
                 // 3.1) 4 bytes with number of segments in this chain
                 storeUintIn4Bytes(head, offset, segChain.numOfSegs);
                 // 3.2) 2 bytes with this chain's last segments size
                 storeUintIn2Bytes(head, offset + 4, segChain.lastSegSize);
                 // 3.3) 24 bytes with the first nonce in this chain
                 head.set(segChain.nonce, offset + 6);
+                // add an offset
+                offset += 30;
             }
         }
         return head;
@@ -290,7 +302,8 @@ var SegInfoHolder = (function () {
             }
             return nonceMod.calculateNonce(this.segChains[0].nonce, segInd, arrFactory);
         }
-        if ((segInd >= this.totalNumOfSegments) || (segInd < 0)) {
+        if ((segInd >= this.totalNumOfSegments) ||
+            (segInd < 0)) {
             throw new Error("Given segment index is out of bounds.");
         }
         var segChain;
@@ -317,7 +330,8 @@ var SegInfoHolder = (function () {
             }
             return this.segSize;
         }
-        if ((segInd >= this.totalNumOfSegments) || (segInd < 0)) {
+        if ((segInd >= this.totalNumOfSegments) ||
+            (segInd < 0)) {
             throw new Error("Given segment index is out of bounds.");
         }
         var segChain;
@@ -328,7 +342,8 @@ var SegInfoHolder = (function () {
                 lastSegInd += segChain.numOfSegs;
                 continue;
             }
-            return (((lastSegInd + segChain.numOfSegs - 1) === segInd) ? segChain.lastSegSize : this.segSize);
+            return (((lastSegInd + segChain.numOfSegs - 1) === segInd) ?
+                segChain.lastSegSize : this.segSize);
         }
         throw new Error("If we get here, there is an error in the loop above.");
     };
@@ -336,7 +351,7 @@ var SegInfoHolder = (function () {
         return this.totalSegsLen;
     };
     return SegInfoHolder;
-})();
+}());
 var SegReader = (function (_super) {
     __extends(SegReader, _super);
     function SegReader(key, header, arrFactory) {
@@ -346,12 +361,12 @@ var SegReader = (function (_super) {
             throw new Error("Given key has wrong size.");
         }
         this.key = new Uint8Array(key);
-        header = header.subarray(72);
         if (header.length === 65) {
             this.initForEndlessFile(header, this.key, this.arrFactory);
         }
         else {
-            if ((((header.length - 46) % 30) !== 0) || (header.length < 46)) {
+            if ((((header.length - 46) % 30) !== 0) ||
+                (header.length < 46)) {
                 throw new Error("Given header array has incorrect size.");
             }
             this.initForFiniteFile(header, this.key, this.arrFactory);
@@ -363,7 +378,10 @@ var SegReader = (function (_super) {
         var nonce = this.getSegmentNonce(segInd, this.arrFactory);
         var segLen = this.segmentSize(segInd);
         if (seg.length < segLen) {
-            if (!this.isEndlessFile()) {
+            if (this.isEndlessFile()) {
+                isLastSeg = true;
+            }
+            else {
                 throw new Error("Given byte array is smaller than segment's size.");
             }
         }
@@ -399,7 +417,7 @@ var SegReader = (function (_super) {
         return wrap;
     };
     return SegReader;
-})(SegInfoHolder);
+}(SegInfoHolder));
 exports.SegReader = SegReader;
 var SegWriter = (function (_super) {
     __extends(SegWriter, _super);
@@ -432,7 +450,8 @@ var SegWriter = (function (_super) {
                 this.initForEndlessFile(header, this.key, this.arrFactory);
             }
             else {
-                if ((((header.length - 46) % 30) !== 0) || (header.length < 46)) {
+                if ((((header.length - 46) % 30) !== 0) ||
+                    (header.length < 46)) {
                     throw new Error("Given header array has incorrect size.");
                 }
                 this.initForFiniteFile(header, this.key, this.arrFactory);
@@ -447,7 +466,8 @@ var SegWriter = (function (_super) {
             this.headerModified = true;
         }
         else {
-            throw new Error("Arguments are illegal, both header bytes and " + "segment size are missing");
+            throw new Error("Arguments are illegal, both header bytes and " +
+                "segment size are missing");
         }
         Object.seal(this);
     }
@@ -457,17 +477,19 @@ var SegWriter = (function (_super) {
         this.totalNumOfSegments = null;
         this.totalSegsLen = null;
         this.segChains = [{
-            numOfSegs: null,
-            lastSegSize: null,
-            nonce: this.randomBytes(24)
-        }];
+                numOfSegs: null,
+                lastSegSize: null,
+                nonce: this.randomBytes(24)
+            }];
     };
     SegWriter.prototype.packSeg = function (content, segInd) {
         var nonce = this.getSegmentNonce(segInd, this.arrFactory);
         var expectedContentSize = this.segmentSize(segInd) - 16;
         if (content.length < expectedContentSize) {
             if (!this.isEndlessFile()) {
-                throw new Error("Given content has length " + content.length + ", while content length of segment " + segInd + " should be " + expectedContentSize);
+                throw new Error("Given content has length " + content.length +
+                    ", while content length of segment " + segInd +
+                    " should be " + expectedContentSize);
             }
         }
         else if (content.length > expectedContentSize) {
@@ -521,6 +543,8 @@ var SegWriter = (function (_super) {
             throw new Error("Given modification will make file too long.");
         }
         var startLoc = this.locationInSegments(pos);
+        // TODO change segments info, and return info above required
+        //      (re)encryption.
         throw new Error("Code is incomplete");
         // - calculate locations of edge bytes.
         var remEnd;
@@ -550,6 +574,6 @@ var SegWriter = (function (_super) {
         return wrap;
     };
     return SegWriter;
-})(SegInfoHolder);
+}(SegInfoHolder));
 exports.SegWriter = SegWriter;
 Object.freeze(exports);

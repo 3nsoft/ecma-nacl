@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 function make_fe25519(arrFactory) {
     return arrFactory.getUint32Array(32);
 }
@@ -266,42 +267,42 @@ function invert(r, x, arrFactory) {
     /* 2^10 - 2^0 */ mul(z2_10_0, t0, z2_5_0, arrFactory);
     /* 2^11 - 2^1 */ square(t0, z2_10_0, arrFactory);
     /* 2^12 - 2^2 */ square(t1, t0, arrFactory);
-    for (var i = 2; i < 10; i += 2) {
+    /* 2^20 - 2^10 */ for (var i = 2; i < 10; i += 2) {
         square(t0, t1, arrFactory);
         square(t1, t0, arrFactory);
     }
     /* 2^20 - 2^0 */ mul(z2_20_0, t1, z2_10_0, arrFactory);
     /* 2^21 - 2^1 */ square(t0, z2_20_0, arrFactory);
     /* 2^22 - 2^2 */ square(t1, t0, arrFactory);
-    for (var i = 2; i < 20; i += 2) {
+    /* 2^40 - 2^20 */ for (var i = 2; i < 20; i += 2) {
         square(t0, t1, arrFactory);
         square(t1, t0, arrFactory);
     }
     /* 2^40 - 2^0 */ mul(t0, t1, z2_20_0, arrFactory);
     /* 2^41 - 2^1 */ square(t1, t0, arrFactory);
     /* 2^42 - 2^2 */ square(t0, t1, arrFactory);
-    for (var i = 2; i < 10; i += 2) {
+    /* 2^50 - 2^10 */ for (var i = 2; i < 10; i += 2) {
         square(t1, t0, arrFactory);
         square(t0, t1, arrFactory);
     }
     /* 2^50 - 2^0 */ mul(z2_50_0, t0, z2_10_0, arrFactory);
     /* 2^51 - 2^1 */ square(t0, z2_50_0, arrFactory);
     /* 2^52 - 2^2 */ square(t1, t0, arrFactory);
-    for (var i = 2; i < 50; i += 2) {
+    /* 2^100 - 2^50 */ for (var i = 2; i < 50; i += 2) {
         square(t0, t1, arrFactory);
         square(t1, t0, arrFactory);
     }
     /* 2^100 - 2^0 */ mul(z2_100_0, t1, z2_50_0, arrFactory);
     /* 2^101 - 2^1 */ square(t1, z2_100_0, arrFactory);
     /* 2^102 - 2^2 */ square(t0, t1, arrFactory);
-    for (var i = 2; i < 100; i += 2) {
+    /* 2^200 - 2^100 */ for (var i = 2; i < 100; i += 2) {
         square(t1, t0, arrFactory);
         square(t0, t1, arrFactory);
     }
     /* 2^200 - 2^0 */ mul(t1, t0, z2_100_0, arrFactory);
     /* 2^201 - 2^1 */ square(t0, t1, arrFactory);
     /* 2^202 - 2^2 */ square(t1, t0, arrFactory);
-    for (var i = 2; i < 50; i += 2) {
+    /* 2^250 - 2^50 */ for (var i = 2; i < 50; i += 2) {
         square(t0, t1, arrFactory);
         square(t1, t0, arrFactory);
     }
@@ -336,37 +337,37 @@ function pow2523(r, x, arrFactory) {
     /* 22 */ square(t, z11, arrFactory);
     /* 2^5 - 2^0 = 31 */ mul(z2_5_0, t, z9, arrFactory);
     /* 2^6 - 2^1 */ square(t, z2_5_0, arrFactory);
-    for (var i = 1; i < 5; i += 1) {
+    /* 2^10 - 2^5 */ for (var i = 1; i < 5; i += 1) {
         square(t, t, arrFactory);
     }
     /* 2^10 - 2^0 */ mul(z2_10_0, t, z2_5_0, arrFactory);
     /* 2^11 - 2^1 */ square(t, z2_10_0, arrFactory);
-    for (var i = 1; i < 10; i += 1) {
+    /* 2^20 - 2^10 */ for (var i = 1; i < 10; i += 1) {
         square(t, t, arrFactory);
     }
     /* 2^20 - 2^0 */ mul(z2_20_0, t, z2_10_0, arrFactory);
     /* 2^21 - 2^1 */ square(t, z2_20_0, arrFactory);
-    for (var i = 1; i < 20; i += 1) {
+    /* 2^40 - 2^20 */ for (var i = 1; i < 20; i += 1) {
         square(t, t, arrFactory);
     }
     /* 2^40 - 2^0 */ mul(t, t, z2_20_0, arrFactory);
     /* 2^41 - 2^1 */ square(t, t, arrFactory);
-    for (var i = 1; i < 10; i += 1) {
+    /* 2^50 - 2^10 */ for (var i = 1; i < 10; i += 1) {
         square(t, t, arrFactory);
     }
     /* 2^50 - 2^0 */ mul(z2_50_0, t, z2_10_0, arrFactory);
     /* 2^51 - 2^1 */ square(t, z2_50_0, arrFactory);
-    for (var i = 1; i < 50; i += 1) {
+    /* 2^100 - 2^50 */ for (var i = 1; i < 50; i += 1) {
         square(t, t, arrFactory);
     }
     /* 2^100 - 2^0 */ mul(z2_100_0, t, z2_50_0, arrFactory);
     /* 2^101 - 2^1 */ square(t, z2_100_0, arrFactory);
-    for (var i = 1; i < 100; i += 1) {
+    /* 2^200 - 2^100 */ for (var i = 1; i < 100; i += 1) {
         square(t, t, arrFactory);
     }
     /* 2^200 - 2^0 */ mul(t, t, z2_100_0, arrFactory);
     /* 2^201 - 2^1 */ square(t, t, arrFactory);
-    for (var i = 1; i < 50; i += 1) {
+    /* 2^250 - 2^50 */ for (var i = 1; i < 50; i += 1) {
         square(t, t, arrFactory);
     }
     /* 2^250 - 2^0 */ mul(t, t, z2_50_0, arrFactory);

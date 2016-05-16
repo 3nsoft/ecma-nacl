@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 var arrays = require('../util/arrays');
 var sbox = require('../boxes/secret_box');
 var segments = require('./xsp-segments');
@@ -67,7 +68,8 @@ function loadUintFrom8Bytes(x, i) {
  */
 function generateXSPFileStart(segsLen) {
     if (segsLen > 0xffffffffffff) {
-        new Error("This implementation " + "cannot handle byte arrays longer than 2^48 (256 TB).");
+        new Error("This implementation " +
+            "cannot handle byte arrays longer than 2^48 (256 TB).");
     }
     var fileStartLen = exports.FILE_START.length;
     var arr = new Uint8Array(fileStartLen + 8);
@@ -94,7 +96,8 @@ var KeyHolder = (function () {
     function KeyHolder(key, keyPack, arrFactory) {
         this.key = key;
         this.keyPack = keyPack;
-        this.arrFactory = (arrFactory ? arrFactory : arrays.makeFactory());
+        this.arrFactory = (arrFactory ?
+            arrFactory : arrays.makeFactory());
     }
     KeyHolder.prototype.newSegWriter = function (segSizein256bs, randomBytes) {
         var writer = new segments.SegWriter(this.key, this.keyPack, null, segSizein256bs, randomBytes, this.arrFactory);
@@ -105,7 +108,7 @@ var KeyHolder = (function () {
         return writer.wrap();
     };
     KeyHolder.prototype.segReader = function (header) {
-        var reader = new segments.SegReader(this.key, header, this.arrFactory);
+        var reader = new segments.SegReader(this.key, header.subarray(KEY_PACK_LENGTH), this.arrFactory);
         return reader.wrap();
     };
     KeyHolder.prototype.destroy = function () {
@@ -131,11 +134,13 @@ var KeyHolder = (function () {
         return wrap;
     };
     KeyHolder.prototype.clone = function (arrFactory) {
-        var kh = new KeyHolder(this.key, this.keyPack, arrFactory);
+        var key = new Uint8Array(this.key.length);
+        key.set(this.key);
+        var kh = new KeyHolder(key, this.keyPack, arrFactory);
         return kh.wrap();
     };
     return KeyHolder;
-})();
+}());
 /**
  * @param mkeyEncr master key encryptor, which is used to make file key pack.
  * @param randomBytes is a function that produces cryptographically strong

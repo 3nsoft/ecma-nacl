@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 /**
  * Analog of crypto_core in crypto_core/salsa20/ref/core.c
  * It makes nicer, shorter code to have variables of this function sitting in

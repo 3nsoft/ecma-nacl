@@ -56,7 +56,7 @@ export function onetimeauth(test: nu.Test) {
 	test.ok(auth.poly1305_verify(a,c,rs,arrFactory));
 
 	arrFactory.wipe(a, c, rs, expectation);
-	arrFactory.wipeRecycled;
+	arrFactory.wipeRecycled();
 
 	test.done();
 }

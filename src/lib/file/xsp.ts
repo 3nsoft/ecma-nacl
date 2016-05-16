@@ -282,7 +282,8 @@ class KeyHolder implements FileKeyHolder {
 	}
 	
 	segReader(header: Uint8Array): SegmentsReader {
-		var reader = new segments.SegReader(this.key, header, this.arrFactory);
+		var reader = new segments.SegReader(this.key,
+			header.subarray(KEY_PACK_LENGTH), this.arrFactory);
 		return reader.wrap();
 	}
 	
@@ -311,7 +312,9 @@ class KeyHolder implements FileKeyHolder {
 	}
 	
 	clone(arrFactory?: arrays.Factory): FileKeyHolder {
-		var kh = new KeyHolder(this.key, this.keyPack, arrFactory);
+		var key = new Uint8Array(this.key.length);
+		key.set(this.key);
+		var kh = new KeyHolder(key, this.keyPack, arrFactory);
 		return kh.wrap();
 	}
 	

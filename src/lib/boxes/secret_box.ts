@@ -108,8 +108,6 @@ export function open(c: Uint8Array, n: Uint8Array,
 			k.length+" elements long."); }
 	if (!arrFactory) { arrFactory = arrays.makeFactory(); }
 	
-	var m = new Uint8Array(c.length+16);
-	
 	var subkey = arrFactory.getUint8Array(32);
 	stream.xsalsa20(subkey,n,k,arrFactory);
 	
@@ -121,18 +119,18 @@ export function open(c: Uint8Array, n: Uint8Array,
 		(<any> err).failedCipherVerification = true;
 		throw err;
 	}
+	
+	var m = new Uint8Array(c.length+16);
 
 	stream.xsalsa20_xor(m,c,16,n,k,arrFactory);
 
 	// first 32 bytes of the opened thing should be cleared
-	for (var i=0; i<32; i++) { m[i] = 0; }
+	for (var i=0; i < 32; i+=1) { m[i] = 0; }
 
 	arrFactory.recycle(subkey);
 	arrFactory.wipeRecycled();
-
-	m = m.subarray(32);
 	
-	return m;
+	return m.subarray(32);
 }
 
 /**
@@ -264,14 +262,14 @@ export module formatWN {
 	 * Note that key will be copied, thus, if given array shall never be used anywhere, it should
 	 * be wiped after this call.
 	 * @param nextNonce is nonce, which should be used for the very first packing.
-	 * All further packing will be done with new nonce, as it is automatically evenly advanced.
+	 * All further packing will be done with new nonce, as it is automatically advanced.
 	 * Note that nextNonce will be copied.
 	 * @param delta is a number between 1 and 255 inclusive, used to advance nonce.
 	 * When missing, it defaults to one.
 	 * @param arrFactory is typed arrays factory, used to allocated/find an array for use.
 	 * It may be undefined, in which case an internally created one is used.
 	 * @return a frozen object with pack & open functions, and destroy
-	 * It is NaCl's secret box for a given key, with automatically evenly advancing nonce.
+	 * It is NaCl's secret box for a given key, with automatically advancing nonce.
 	 */
 	export function makeEncryptor(key: Uint8Array, nextNonce: Uint8Array,
 			delta?: number, arrFactory?: arrays.Factory): Encryptor {

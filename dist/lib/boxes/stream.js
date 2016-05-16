@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 var arrays = require('../util/arrays');
 var core = require('./core');
 /**
@@ -51,8 +52,8 @@ function stream_salsa20(c, n, k, arrFactory) {
     if (clen > 0) {
         var block = arrFactory.getUint8Array(64);
         core.salsa20(block, inArr, k, exports.SIGMA);
-        for (i = 0; i < clen; ++i) {
-            c[i] = block[i];
+        for (var i = 0; i < clen; i += 1) {
+            c[cstart + i] = block[i];
         }
         arrFactory.recycle(block);
     }

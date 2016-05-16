@@ -69,7 +69,8 @@ export function calc_dhshared_key(pk: Uint8Array, sk: Uint8Array,
 
 /**
  * Analog of crypto_box in crypto_box/curve25519xsalsa20poly1305/ref/box.c
- * @param m is Uint8Array of message bytes that need to be encrypted by secret key.
+ * @param m is Uint8Array of message bytes that need to be encrypted to given
+ * secret and public keys.
  * @param n is Uint8Array, 24 bytes long nonce.
  * @param pk is Uint8Array, 32 bytes long public key of message receiving party.
  * @param sk is Uint8Array, 32 bytes long secret key of message sending party.

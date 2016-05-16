@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 var arrays = require('../util/arrays');
 var sm = require('./scalarmult');
 var core = require('./core');
@@ -24,7 +25,8 @@ function generate_pubkey(sk, arrFactory) {
         throw new TypeError("Key array k must be Uint8Array.");
     }
     if (sk.length !== 32) {
-        throw new Error("Key array sk should have 32 " + "elements (bytes) in it, but it is " + sk.length + " elements long.");
+        throw new Error("Key array sk should have 32 " +
+            "elements (bytes) in it, but it is " + sk.length + " elements long.");
     }
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
@@ -54,13 +56,15 @@ function calc_dhshared_key(pk, sk, arrFactory) {
         throw new TypeError("Public key array pk must be Uint8Array.");
     }
     if (pk.length !== 32) {
-        throw new Error("Public key array pk should have 32 elements (bytes) in it, but it is " + pk.length + " elements long.");
+        throw new Error("Public key array pk should have 32 elements (bytes) in it, but it is " +
+            pk.length + " elements long.");
     }
     if (!(sk instanceof Uint8Array)) {
         throw new TypeError("Secret key array sk must be Uint8Array.");
     }
     if (sk.length !== 32) {
-        throw new Error("Secret key array sk should have 32 elements (bytes) in it, but it is " + sk.length + " elements long.");
+        throw new Error("Secret key array sk should have 32 elements (bytes) in it, but it is " +
+            sk.length + " elements long.");
     }
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
@@ -74,7 +78,8 @@ function calc_dhshared_key(pk, sk, arrFactory) {
 exports.calc_dhshared_key = calc_dhshared_key;
 /**
  * Analog of crypto_box in crypto_box/curve25519xsalsa20poly1305/ref/box.c
- * @param m is Uint8Array of message bytes that need to be encrypted by secret key.
+ * @param m is Uint8Array of message bytes that need to be encrypted to given
+ * secret and public keys.
  * @param n is Uint8Array, 24 bytes long nonce.
  * @param pk is Uint8Array, 32 bytes long public key of message receiving party.
  * @param sk is Uint8Array, 32 bytes long secret key of message sending party.

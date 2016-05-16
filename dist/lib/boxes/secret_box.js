@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 var stream = require('./stream');
 var auth = require('./onetimeauth');
 var arrays = require('../util/arrays');
@@ -17,13 +18,15 @@ function checkPackArgs(m, n, k) {
         throw new TypeError("Nonce array n must be Uint8Array.");
     }
     if (n.length !== 24) {
-        throw new Error("Nonce array n should have 24 elements (bytes) in it, but it is " + n.length + " elements long.");
+        throw new Error("Nonce array n should have 24 elements (bytes) in it, but it is " +
+            n.length + " elements long.");
     }
     if (!(k instanceof Uint8Array)) {
         throw new TypeError("Key array k must be Uint8Array.");
     }
     if (k.length !== 32) {
-        throw new Error("Key array k should have 32 elements (bytes) in it, but it is " + k.length + " elements long.");
+        throw new Error("Key array k should have 32 elements (bytes) in it, but it is " +
+            k.length + " elements long.");
     }
 }
 /**
@@ -47,6 +50,7 @@ function xsalsa20poly1305_pad_and_pack(c, m, n, k, arrFactory) {
     stream.xsalsa20_xor(c, m, 32, n, k, arrFactory);
     var dataPartOfC = c.subarray(32), polyOut = c.subarray(16, 32), polyKey = c.subarray(0, 32);
     auth.poly1305(polyOut, dataPartOfC, polyKey, arrFactory);
+    // clear poly key part, which is not overwritten by poly output
     for (var i = 0; i < 16; i += 1) {
         c[i] = 0;
     }
@@ -90,24 +94,26 @@ function open(c, n, k, arrFactory) {
         throw new TypeError("Cipher array c must be Uint8Array.");
     }
     if (c.length < 17) {
-        throw new Error("Cipher array c should have at least 17 elements (bytes) in it, but is only " + c.length + " elements long.");
+        throw new Error("Cipher array c should have at least 17 elements (bytes) in it, but is only " +
+            c.length + " elements long.");
     }
     if (!(n instanceof Uint8Array)) {
         throw new TypeError("Nonce array n must be Uint8Array.");
     }
     if (n.length !== 24) {
-        throw new Error("Nonce array n should have 24 elements (bytes) in it, but it is " + n.length + " elements long.");
+        throw new Error("Nonce array n should have 24 elements (bytes) in it, but it is " +
+            n.length + " elements long.");
     }
     if (!(k instanceof Uint8Array)) {
         throw new TypeError("Key array k must be Uint8Array.");
     }
     if (k.length !== 32) {
-        throw new Error("Key array k should have 32 elements (bytes) in it, but it is " + k.length + " elements long.");
+        throw new Error("Key array k should have 32 elements (bytes) in it, but it is " +
+            k.length + " elements long.");
     }
     if (!arrFactory) {
         arrFactory = arrays.makeFactory();
     }
-    var m = new Uint8Array(c.length + 16);
     var subkey = arrFactory.getUint8Array(32);
     stream.xsalsa20(subkey, n, k, arrFactory);
     var polyPartOfC = c.subarray(0, 16);
@@ -117,14 +123,15 @@ function open(c, n, k, arrFactory) {
         err.failedCipherVerification = true;
         throw err;
     }
+    var m = new Uint8Array(c.length + 16);
     stream.xsalsa20_xor(m, c, 16, n, k, arrFactory);
-    for (var i = 0; i < 32; i++) {
+    // first 32 bytes of the opened thing should be cleared
+    for (var i = 0; i < 32; i += 1) {
         m[i] = 0;
     }
     arrFactory.recycle(subkey);
     arrFactory.wipeRecycled();
-    m = m.subarray(32);
-    return m;
+    return m.subarray(32);
 }
 exports.open = open;
 /**
@@ -180,7 +187,9 @@ var formatWN;
      */
     function open(c, k, arrFactory) {
         if (c.length < 41) {
-            throw new Error("Array c with nonce and cipher should " + "have at least 41 elements (bytes) in it, but is only " + c.length + " elements long.");
+            throw new Error("Array c with nonce and cipher should " +
+                "have at least 41 elements (bytes) in it, but is only " +
+                c.length + " elements long.");
         }
         if (!arrFactory) {
             arrFactory = arrays.makeFactory();
@@ -198,7 +207,8 @@ var formatWN;
      */
     function copyNonceFrom(c) {
         if (c.length < 41) {
-            throw new Error("Array c with nonce and cipher should have at " + "least 41 elements (bytes) in it, but is only " + c.length + " elements long.");
+            throw new Error("Array c with nonce and cipher should have at " +
+                "least 41 elements (bytes) in it, but is only " + c.length + " elements long.");
         }
         return new Uint8Array(c.subarray(0, 24));
     }
@@ -209,27 +219,29 @@ var formatWN;
      * Note that key will be copied, thus, if given array shall never be used anywhere, it should
      * be wiped after this call.
      * @param nextNonce is nonce, which should be used for the very first packing.
-     * All further packing will be done with new nonce, as it is automatically evenly advanced.
+     * All further packing will be done with new nonce, as it is automatically advanced.
      * Note that nextNonce will be copied.
      * @param delta is a number between 1 and 255 inclusive, used to advance nonce.
      * When missing, it defaults to one.
      * @param arrFactory is typed arrays factory, used to allocated/find an array for use.
      * It may be undefined, in which case an internally created one is used.
      * @return a frozen object with pack & open functions, and destroy
-     * It is NaCl's secret box for a given key, with automatically evenly advancing nonce.
+     * It is NaCl's secret box for a given key, with automatically advancing nonce.
      */
     function makeEncryptor(key, nextNonce, delta, arrFactory) {
         if (!(nextNonce instanceof Uint8Array)) {
             throw new TypeError("Nonce array nextNonce must be Uint8Array.");
         }
         if (nextNonce.length !== 24) {
-            throw new Error("Nonce array nextNonce should have 24 elements (bytes) in it, but it is " + nextNonce.length + " elements long.");
+            throw new Error("Nonce array nextNonce should have 24 elements (bytes) in it, but it is " +
+                nextNonce.length + " elements long.");
         }
         if (!(key instanceof Uint8Array)) {
             throw new TypeError("Key array key must be Uint8Array.");
         }
         if (key.length !== 32) {
-            throw new Error("Key array key should have 32 elements (bytes) in it, but it is " + key.length + " elements long.");
+            throw new Error("Key array key should have 32 elements (bytes) in it, but it is " +
+                key.length + " elements long.");
         }
         if ('number' !== typeof delta) {
             delta = 1;
@@ -248,10 +260,13 @@ var formatWN;
         var encryptor = {
             pack: function (m) {
                 if (!key) {
-                    throw new Error("This encryptor cannot be used, " + "as it had already been destroyed.");
+                    throw new Error("This encryptor cannot be used, " +
+                        "as it had already been destroyed.");
                 }
                 if (counter > 0xfffffffffffff) {
-                    throw new Error("This encryptor " + "has been used 2^52 (too many) times. Further use may " + "lead to duplication of nonces.");
+                    throw new Error("This encryptor " +
+                        "has been used 2^52 (too many) times. Further use may " +
+                        "lead to duplication of nonces.");
                 }
                 var c = pack(m, nextNonce, key, arrFactory);
                 nonceUtils.advance(nextNonce, delta);
@@ -289,7 +304,8 @@ var formatWN;
             throw new TypeError("Key array key must be Uint8Array.");
         }
         if (key.length !== 32) {
-            throw new Error("Key array key should have 32 elements (bytes) in it, but it is " + key.length + " elements long.");
+            throw new Error("Key array key should have 32 elements (bytes) in it, but it is " +
+                key.length + " elements long.");
         }
         // set variable in the closure
         if (!arrFactory) {
@@ -300,7 +316,8 @@ var formatWN;
         var decryptor = {
             open: function (c) {
                 if (!key) {
-                    throw new Error("This encryptor cannot be used, " + "as it had already been destroyed.");
+                    throw new Error("This encryptor cannot be used, " +
+                        "as it had already been destroyed.");
                 }
                 return open(c, key, arrFactory);
             },

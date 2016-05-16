@@ -2,6 +2,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 /**
  * This is a TypeScrypt rewrite of scrypt-1.1.6.
  * In particular this file contains scrypt algorithm's main part.
@@ -223,6 +224,7 @@ function blockmix_salsa8(B, Y, r, arrFactory) {
     var X = arrFactory.getUint8Array(64);
     /* 1: X <-- B_{2r - 1} */
     blkcpy(X, 0, B, (2 * r - 1) * 64, 64);
+    /* 2: for i = 0 to 2r - 1 do */
     for (var i = 0; i < 2 * r; i += 1) {
         /* 3: X <-- H(X \xor B_i) */
         blkxor(X, 0, B, i * 64, 64);
@@ -230,6 +232,7 @@ function blockmix_salsa8(B, Y, r, arrFactory) {
         /* 4: Y_i <-- X */
         blkcpy(Y, i * 64, X, 0, 64);
     }
+    /* 6: B' <-- (Y_0, Y_2 ... Y_{2r-2}, Y_1, Y_3 ... Y_{2r-1}) */
     for (var i = 0; i < r; i += 1) {
         blkcpy(B, i * 64, Y, (i * 2) * 64, 64);
     }
@@ -264,6 +267,7 @@ function smix(B, r, N, V, XY, progress, arrFactory) {
     var nextProgInd = progress.deltaN;
     /* 1: X <-- B */
     blkcpy(X, 0, B, 0, 128 * r);
+    /* 2: for i = 0 to N - 1 do */
     for (var i = 0; i < N; i += 1) {
         /* 3: V_i <-- X */
         blkcpy(V, i * (128 * r), X, 0, 128 * r);
@@ -277,7 +281,7 @@ function smix(B, r, N, V, XY, progress, arrFactory) {
     nextProgInd = progress.deltaN;
     /* 6: for i = 0 to N - 1 do */
     var j;
-    for (i = 0; i < N; i += 1) {
+    for (var i = 0; i < N; i += 1) {
         /* 7: j <-- Integerify(X) mod N */
         j = integerifyAndMod(X, r, N);
         /* 8: X <-- H(X \xor V_j) */
@@ -315,6 +319,7 @@ function scrypt(passwd, salt, logN, r, p, dkLen, progressCB, arrFactory) {
     var V;
     var B;
     var XY;
+    /* Allocate memory. */
     try {
         V = arrFactory.getUint8Array(128 * r * N);
         B = arrFactory.getUint8Array(128 * r * p);
@@ -336,6 +341,7 @@ function scrypt(passwd, salt, logN, r, p, dkLen, progressCB, arrFactory) {
             progressCB(this.completed);
         }
     };
+    /* 2: for i = 0 to p - 1 do */
     for (var i = 0; i < p; i += 1) {
         /* 3: B_i <-- MF(B_i, N) */
         smix(B.subarray(i * 128 * r), r, N, V, XY, progShow, arrFactory);

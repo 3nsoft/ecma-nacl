@@ -2,7 +2,7 @@
  * This file is an external interface of Ecma-NaCl library.
  */
 
-declare module EcmaNacl {
+declare namespace EcmaNacl {
 	/**
 	/** Analog of crypto_scrypt in lib/crypto/crypto_scrypt-ref.c
 	 * crypto_scrypt(passwd, passwdlen, salt, saltlen, N, r, p, buf, buflen):
@@ -81,7 +81,7 @@ declare module EcmaNacl.arrays {
 	export function wipe(...arrays: any[]): void;
 }
 
-declare module EcmaNacl.secret_box {
+declare namespace EcmaNacl.secret_box {
 	/**
 	 * @param m is Uint8Array of message bytes that need to be encrypted by secret key.
 	 * @param n is Uint8Array, 24 bytes long nonce.
@@ -143,7 +143,7 @@ declare module EcmaNacl.secret_box {
 		 */
 	    destroy(): void;
 	}
-	export module formatWN {
+	export namespace formatWN {
 		/**
 		 * @param m is Uint8Array of message bytes that need to be encrypted by secret key.
 		 * @param n is Uint8Array, 24 bytes long nonce.
@@ -174,14 +174,14 @@ declare module EcmaNacl.secret_box {
 		 * Note that key will be copied, thus, if given array shall never be used anywhere, it should
 		 * be wiped after this call.
 		 * @param nextNonce is nonce, which should be used for the very first packing.
-		 * All further packing will be done with new nonce, as it is automatically evenly advanced.
+		 * All further packing will be done with new nonce, as it is automatically advanced.
 		 * Note that nextNonce will be copied.
 		 * @param delta is a number between 1 and 255 inclusive, used to advance nonce.
 		 * When missing, it defaults to one.
 		 * @param arrFactory is typed arrays factory, used to allocated/find an array for use.
 		 * It may be undefined, in which case an internally created one is used.
 		 * @return a frozen object with pack & open functions, and destroy
-		 * It is NaCl's secret box for a given key, with automatically evenly advancing nonce.
+		 * It is NaCl's secret box for a given key, with automatically advancing nonce.
 		 */
 	    function makeEncryptor(key: Uint8Array, nextNonce: Uint8Array, delta?: number, arrFactory?: arrays.Factory): Encryptor;
 		/**
@@ -201,7 +201,7 @@ declare module EcmaNacl.secret_box {
 	export var JWK_ALG_NAME: string;
 }
 
-declare module EcmaNacl.box {
+declare namespace EcmaNacl.box {
 	/**
 	 * Replacement of crypto_box_keypair in
 	 * crypto_box/curve25519xsalsa20poly1305/ref/keypair.c
@@ -227,7 +227,8 @@ declare module EcmaNacl.box {
 	export function calc_dhshared_key(pk: Uint8Array, sk: Uint8Array, arrFactory?: arrays.Factory): Uint8Array;
 	/**
 	 * Analog of crypto_box in crypto_box/curve25519xsalsa20poly1305/ref/box.c
-	 * @param m is Uint8Array of message bytes that need to be encrypted by secret key.
+	 * @param m is Uint8Array of message bytes that need to be encrypted to given
+	 * secret and public keys.
 	 * @param n is Uint8Array, 24 bytes long nonce.
 	 * @param pk is Uint8Array, 32 bytes long public key of message receiving party.
 	 * @param sk is Uint8Array, 32 bytes long secret key of message sending party.
@@ -250,11 +251,11 @@ declare module EcmaNacl.box {
 	 * @throws Error when cipher bytes fail verification.
 	 */
 	export function open(c: Uint8Array, n: Uint8Array, pk: Uint8Array, sk: Uint8Array, arrFactory?: arrays.Factory): Uint8Array;
-	export module stream {
+	export namespace stream {
     	var pack: typeof secret_box.pack;
 	    var open: typeof secret_box.open;
 	}
-	export module formatWN {
+	export namespace formatWN {
 		/**
 		 * @param m is Uint8Array of message bytes that need to be encrypted by secret key.
 		 * @param n is Uint8Array, 24 bytes long nonce.
@@ -309,7 +310,7 @@ declare module EcmaNacl.box {
 	export var JWK_ALG_NAME: string;
 }
 
-declare module EcmaNacl.nonce {
+declare namespace EcmaNacl.nonce {
 	/**
 	 * This takes a given 24-byte nonce as three 8-byte numbers, and adds
 	 * a given delta to each number.
@@ -345,7 +346,7 @@ declare module EcmaNacl.nonce {
 	export function calculateDelta(n1: Uint8Array, n2: Uint8Array): number;
 }
 
-declare module EcmaNacl.signing {
+declare namespace EcmaNacl.signing {
 	export interface Keypair {
 		/**
 		 * Secret key of this pair.
@@ -376,7 +377,7 @@ declare module EcmaNacl.signing {
 	export var SECRET_KEY_LENGTH: number;
 }
 
-declare module EcmaNacl.fileXSP {
+declare namespace EcmaNacl.fileXSP {
 	/**
 	 * This is a starting sequence of xsp file, which contains both
 	 * encrypted segments and a header.
@@ -544,7 +545,7 @@ declare module EcmaNacl.fileXSP {
 	export function makeFileKeyHolder(mkeyDecr: secret_box.Decryptor, header: Uint8Array, arrFactory?: arrays.Factory): FileKeyHolder;
 }
 
-declare module EcmaNacl.hashing.sha512 {
+declare namespace EcmaNacl.hashing.sha512 {
 	/**
 	 * Analog of crypto_hash in crypto_hash/sha512/ref/hash.c
 	 * with ending part of make hash of padded arranged into its

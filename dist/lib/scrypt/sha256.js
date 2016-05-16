@@ -2,11 +2,24 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 /**
  * Analog of round in crypto_hashblocks/sha256/inplace/blocks.c
  * Length === 64.
  */
-var round = new Uint32Array([0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]);
+var round = new Uint32Array([0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b,
+    0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01,
+    0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7,
+    0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+    0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152,
+    0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
+    0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc,
+    0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819,
+    0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08,
+    0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f,
+    0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]);
 /**
  * Analog of SHA256_Transform in lib/crypto/sha256.h
  * with all C macros expanded.
@@ -27,17 +40,23 @@ function crypto_hashblocks(state, inArr, arrFactory) {
     var t1;
     var t;
     while (inlen >= 64) {
+        /* Prepare message schedule W. */
         for (var i = 0; i < 16; i += 1) {
             t = inInd + i * 4;
-            W[i] = (inArr[t] << 24) + (inArr[t + 1] << 16) + (inArr[t + 2] << 8) + inArr[t + 3];
+            W[i] = (inArr[t] << 24) + (inArr[t + 1] << 16) +
+                (inArr[t + 2] << 8) + inArr[t + 3];
         }
         for (var i = 16; i < 64; i += 1) {
             t = W[i - 2];
             // t0 = sigma1(t); expanded below
-            t0 = ((t >>> 17) | (t << 15)) ^ ((t >>> 19) | (t << 13)) ^ (t >>> 10);
+            t0 = ((t >>> 17) | (t << 15)) ^
+                ((t >>> 19) | (t << 13)) ^
+                (t >>> 10);
             t = W[i - 15];
             // t1 = sigma0(t); expanded below
-            t1 = ((t >>> 7) | (t << 25)) ^ ((t >>> 18) | (t << 14)) ^ (t >>> 3);
+            t1 = ((t >>> 7) | (t << 25)) ^
+                ((t >>> 18) | (t << 14)) ^
+                (t >>> 3);
             W[i] = t0 + W[i - 7] + t1 + W[i - 16];
         }
         /* Mix.
@@ -60,11 +79,15 @@ function crypto_hashblocks(state, inArr, arrFactory) {
         for (var i = 0; i < 64; i += 1) {
             t0 = h + W[i] + round[i];
             // t0 += Sigma1(e);
-            t0 += ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+            t0 += ((e >>> 6) | (e << 26)) ^
+                ((e >>> 11) | (e << 21)) ^
+                ((e >>> 25) | (e << 7));
             // t0 += Ch(e, f, g);
             t0 += (e & (f ^ g)) ^ g;
             // t1 = Sigma0(a);
-            t1 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+            t1 = ((a >>> 2) | (a << 30)) ^
+                ((a >>> 13) | (a << 19)) ^
+                ((a >>> 22) | (a << 10));
             // t1 += Maj(a, b, c);
             t1 += (a & (b | c)) | (b & c);
             d += t0;
@@ -108,7 +131,8 @@ function hashFromU32toU8(statebytes, state) {
  * Analog of iv in crypto_hash/sha256/inplace/ref.c
  * Length === 8.
  */
-var iv = new Uint32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
+var iv = new Uint32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
 function hash_padded_block(h, oddBytes, totalLen, arrFactory) {
     var padded = arrFactory.getUint8Array(128);
     var oddLen = oddBytes.length;
@@ -123,10 +147,10 @@ function hash_padded_block(h, oddBytes, totalLen, arrFactory) {
         for (var i = oddLen + 1; i < 56; i += 1) {
             padded[i] = 0;
         }
-        padded[56] = bits[0] >>> 56;
-        padded[57] = bits[0] >>> 48;
-        padded[58] = bits[0] >>> 40;
-        padded[59] = bits[0] >>> 32;
+        padded[56] = bits[0] >>> 24;
+        padded[57] = bits[0] >>> 16;
+        padded[58] = bits[0] >>> 8;
+        padded[59] = bits[0];
         padded[60] = bits[1] >>> 24;
         padded[61] = bits[1] >>> 16;
         padded[62] = bits[1] >>> 8;
@@ -137,10 +161,10 @@ function hash_padded_block(h, oddBytes, totalLen, arrFactory) {
         for (var i = oddLen + 1; i < 120; i += 1) {
             padded[i] = 0;
         }
-        padded[120] = bits[0] >>> 56;
-        padded[121] = bits[0] >>> 48;
-        padded[122] = bits[0] >>> 40;
-        padded[123] = bits[0] >>> 32;
+        padded[120] = bits[0] >>> 24;
+        padded[121] = bits[0] >>> 16;
+        padded[122] = bits[0] >>> 8;
+        padded[123] = bits[0];
         padded[124] = bits[1] >>> 24;
         padded[125] = bits[1] >>> 16;
         padded[126] = bits[1] >>> 8;
@@ -335,6 +359,7 @@ function PBKDF2_SHA256(passwd, salt, c, buf, arrFactory) {
     /* Compute HMAC state after processing P and S. */
     HMAC_SHA256_Init(PShctx, passwd, 0, passwd.length);
     HMAC_SHA256_Update(PShctx, salt, 0, salt.length);
+    /* Iterate through the blocks. */
     for (var i = 0; (i * 32) < dkLen; i += 1) {
         /* Generate INT(i + 1). */
         be32enc(ivec, 0, i + 1);
@@ -349,6 +374,7 @@ function PBKDF2_SHA256(passwd, salt, c, buf, arrFactory) {
             HMAC_SHA256_Init(hctx, passwd, 0, passwd.length);
             HMAC_SHA256_Update(hctx, U, 0, 32);
             HMAC_SHA256_Final(U, hctx);
+            /* ... xor U_j ... */
             for (var k = 0; k < 32; k += 1) {
                 T[k] ^= U[k];
             }
