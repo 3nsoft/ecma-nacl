@@ -414,6 +414,6 @@ reader.destroy();
 
 This code is provided here under [Mozilla Public License Version 2.0](https://www.mozilla.org/MPL/2.0/).
 
-NaCl C library is public domain code by Daniel J. Bernstein and others crypto gods and semi-gods. We thank thy wisdom of giving us developer-friendly library.
+NaCl C library is public domain code by DJBernstein and Co. We thank thy wisdom of giving us developer-friendly library.
 
 Scrypt C library is created by Colin Percival. We thank thee for bringing us strong new ideas in key derivation tasks.
