@@ -1,9 +1,12 @@
 {
   "name": "ecma-nacl",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "JavaScript (ECMAScript) version of NaCl Cryptographic library",
   "main": "./dist/lib/ecma-nacl.js",
-  "typings": "./lib declarations/ecma-nacl.d.ts",
+  "typings": "./dist/lib/ecma-nacl.d.ts",
+  "scripts": {
+    "gulp": "./node_modules/.bin/gulp"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/3nsoft/ecma-nacl.git"
@@ -17,13 +20,11 @@
     "gulp-nodeunit-runner": "^0.2.2",
     "gulp-rename": "^1.2.2",
     "gulp-streamify": "0.0.5",
-    "gulp-typedoc": "^1.1.0",
     "gulp-typescript": "^2.6.0",
     "gulp-uglify": "^1.2.0",
     "js-nacl": "^0.6.0",
     "merge2": "^0.3.4",
     "nodeunit": "^0.9.1",
-    "tsify": "^0.8.1",
     "tweetnacl": "^0.13.1",
     "vinyl-source-stream": "^1.1.0"
   },
@@ -32,7 +33,7 @@
     "high-level",
     "crypto",
     "nacl",
-	 "scrypt"
+	  "scrypt"
   ],
   "contributors": [
     {

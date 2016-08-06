@@ -11,13 +11,12 @@ var streamify = require('gulp-streamify');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 var nodeunit = require("gulp-nodeunit-runner");
-var typedoc = require("gulp-typedoc");
 
 var SRC = 'src';
 var DIST = 'dist';
 
 gulp.task('lib', function() {
-	return gulp.src(SRC+'/lib/**/*.ts')
+	return gulp.src([ SRC+'/lib/**/*.ts', SRC+'/typings/**/*.d.ts' ])
 	.pipe(typescript({
 		target: 'ES5',
 		module: 'commonjs'
@@ -25,28 +24,20 @@ gulp.task('lib', function() {
 	.js.pipe(gulp.dest(DIST+'/lib'));
 });
 
-/**
- * Note that currently generated declarations should go through editing
- * process, so as to be useful in things like DefinitelyTyped.
- */
 gulp.task('lib-declarations', function() {
-	return gulp.src(SRC+'/lib/**/*.ts')
+	return gulp.src([ SRC+'/lib/**/*.ts', SRC+'/typings/**/*.d.ts' ])
 	.pipe(typescript({
 		target: 'ES5',
 		module: 'commonjs',
-		declarationFiles: true
+		declaration: true
 	}))
-	.dts.pipe(gulp.dest(DIST+'/lib-declarations'));
+	.dts.pipe(gulp.dest(DIST+'/lib'));
 });
 
-gulp.task('lib-browser', function() {
+gulp.task('lib-browser', [ 'lib' ], function() {
 	return browserify()
-	.require(__dirname+'/'+SRC+'/lib/ecma-nacl.ts',
+	.require(__dirname+'/'+DIST+'/lib/ecma-nacl.js',
 			{ expose: 'ecma-nacl' })
-	.plugin('tsify', {
-		target: 'ES5',
-		module: 'commonjs'
-	})
 	.bundle()
 	.pipe(source('ecma-nacl.js'))
 	.pipe(gulp.dest(DIST+'/lib-browser'));
@@ -57,30 +48,6 @@ gulp.task('lib-browser-min', ['lib-browser'], function() {
 	.pipe(streamify(uglify()))
 	.pipe(rename('ecma-nacl.min.js'))
 	.pipe(gulp.dest(DIST+'/lib-browser'));
-});
-
-function browserifyTS(path) {
-	return browserify()
-	.add(__dirname+'/'+SRC+'/tests/in-browser/'+path)
-	.external('ecma-nacl')
-	.plugin('tsify', {
-		target: 'ES5',
-		module: 'commonjs'
-	})
-	.bundle()
-	.pipe(source(path.substring(0, path.length-2)+'js'));
-}
-
-gulp.task('test-browser', ['lib-browser'], function() {
-	return merge(
-			browserifyTS('ecma-nacl_runs/index.ts'),
-			browserifyTS('ecma-nacl_runs/worker.ts'),
-			browserifyTS('comparison/index.ts'),
-			browserifyTS('comparison/worker.ts'),
-			gulp.src([ DIST+'/lib-browser/ecma-nacl.js',
-	                   SRC+'/tests/in-browser/**/*.js',
-	                   SRC+'/tests/in-browser/**/*.html' ]))
-	.pipe(gulp.dest(DIST+'/test-browser'));
 });
 
 gulp.task('test-node', ['lib'], function() {
@@ -109,17 +76,6 @@ gulp.task('run-unittest', [ 'test-node' ], function() {
 	.pipe(nodeunit());
 });
 
-gulp.task('code-docs', function() {
-	return gulp.src([ SRC+'/**/*.ts', SRC+'/typings/**/*' ])
-	.pipe(typedoc({
-		module: 'commonjs',
-		out: DIST+'/code-docs',
-		name: 'Ecma-NaCl',
-		target: 'es5',
-		ignoreCompilerErrors: true
-	}));
-});
-
 gulp.task('run-performance', [ 'test-node' ], function() {
 	require('./'+DIST+'/test-node/performance/ecma-nacl_runs');
 });
@@ -128,7 +84,7 @@ gulp.task('run-comparison', [ 'test-node' ], function() {
 	require('./'+DIST+'/test-node/performance/comparison');
 });
 
-gulp.task('compile-dist', [ 'lib', 'lib-browser', 'lib-browser-min' ]);
+gulp.task('compile-dist', [ 'lib', 'lib-browser', 'lib-browser-min', 'lib-declarations' ]);
 gulp.task('compile-all', [ 'compile-dist', 'test-node', 'test-browser' ]);
 
 gulp.task('default', [ 'compile-dist' ]);
@@ -141,9 +97,7 @@ gulp.task('help', function() {
 		'\t3) "run-unittest" task runs unit tests;\n'+
 		'\t4) "run-performance" task runs timing code;\n'+
 		'\t5) "run-comparison" task runs comparisons to other NaCl implementing'+
-		' libraries;\n'+
-		'\t6) "code-docs" task uses TypeDoc to generate dist/code-docs pages,'+
-		'picking up all of source documentation.\n\n'+
+		' libraries;\n\n'+
 		'After complete compilation, one may run performance and comparison'+
 		' code in browser, opening test pages, located in dist/test-browser'+
 		' folder.';

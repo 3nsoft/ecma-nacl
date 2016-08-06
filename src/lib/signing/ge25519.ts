@@ -49,7 +49,7 @@ function make_ge25519_p1p1(arrFactory: arrays.Factory): ge25519_p1p1 {
 /**
  * Analog of struct ge25519_p2 in crypto_sign/ed25519/ref/ge25519.c
  */
-interface ge25519_p2 {
+export interface ge25519_p2 {
 	x: fe.fe25519;
 	y: fe.fe25519;
 	z: fe.fe25519;

@@ -6,12 +6,10 @@
 /**
  * This file is an external interface of Ecma-NaCl library.
  */
-/// <reference path="../typings/tsd.d.ts" />
 exports.secret_box = require('./boxes/secret_box');
 exports.box = require('./boxes/box');
 exports.nonce = require('./util/nonce');
 exports.signing = require('./signing/sign');
-exports.fileXSP = require('./file/xsp');
 var sha512Mod = require('./hash/sha512');
 var hashing;
 (function (hashing) {
