@@ -294,14 +294,15 @@ export module formatWN {
 		key = new Uint8Array(key);
 		nextNonce = new Uint8Array(nextNonce);
 		var counter = 0;
+		var counterMax = Math.floor(0xfffffffffffff / delta);
 		
 		// arrange and freeze resulting object
 		var encryptor: Encryptor = {
 			pack: (m) => {
 				if (!key) { throw new Error("This encryptor cannot be used, " +
 					"as it had already been destroyed."); }
-				if (counter > 0xfffffffffffff) { throw new Error("This encryptor "+
-						"has been used 2^52 (too many) times. Further use may "+
+				if (counter > counterMax) { throw new Error("This encryptor "+
+						"has been used too many times. Further use may "+
 						"lead to duplication of nonces."); }
 				var c = pack(m, nextNonce, key, arrFactory);
 				nonceUtils.advance(nextNonce, delta);
@@ -350,7 +351,7 @@ export module formatWN {
 		// arrange and freeze resulting object
 		var decryptor = {
 			open: (c) => {
-				if (!key) { throw new Error("This encryptor cannot be used, " +
+				if (!key) { throw new Error("This decryptor cannot be used, " +
 						"as it had already been destroyed."); }
 				return open(c, key, arrFactory);
 			},

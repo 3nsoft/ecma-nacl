@@ -1428,7 +1428,7 @@ var formatWN;
         var decryptor = {
             open: function (c) {
                 if (!key) {
-                    throw new Error("This encryptor cannot be used, " +
+                    throw new Error("This decryptor cannot be used, " +
                         "as it had already been destroyed.");
                 }
                 return open(c, key, arrFactory);
