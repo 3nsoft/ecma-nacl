@@ -1,5 +1,5 @@
 /node_modules
+/dist/
 /.vscode/
 /.idea/
 /npm-debug.log
-/dist/test-node/

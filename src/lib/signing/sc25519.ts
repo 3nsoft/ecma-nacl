@@ -26,20 +26,6 @@ export function make_sc25519(arrFactory: arrays.Factory): sc25519 {
 } 
 
 /**
- * Analog of struct shortsc25519 in crypto_sign/ed25519/ref/sc25519.h
- */
-export interface shortsc25519 extends Uint32Array {
-	/**
-	 * Do not use this field. It is present only in interface to stop
-	 * type-script from error-less casting of arrays to this interface.
-	 */
-	shortsc25519: boolean;
-}
-export function make_shortsc25519(arrFactory: arrays.Factory): shortsc25519 {
-	return <any> arrFactory.getUint32Array(16);
-} 
-
-/**
  * Analog of constant m in crypto_sign/ed25519/ref/sc25519.c
  * Length === 32.
  */

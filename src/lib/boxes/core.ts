@@ -22,6 +22,11 @@ import arrays = require('../util/arrays');
  */
 export function salsa20(out: Uint8Array, inArr: Uint8Array,
 		k: Uint8Array, c: Uint8Array): void {
+	// Note that (uint8 << 24) may produce negative number, probably due to
+	// treating intermediate integer as signed, and pulling sign to
+	// resulting float number. Yet, said numbers are involved in additions and
+	// bit-wise operations with casting to 32-bit integers and final casting
+	// to uint8's, and possible signs on intermediate floats does no harm.
 
 	// inlined load_littleendian()'s
 	var x0 = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
@@ -176,6 +181,11 @@ export function salsa20(out: Uint8Array, inArr: Uint8Array,
  */
 export function hsalsa20(out: Uint8Array, inArr: Uint8Array,
 		k: Uint8Array, c: Uint8Array): void {
+	// Note that (uint8 << 24) may produce negative number, probably due to
+	// treating intermediate integer as signed, and pulling sign to
+	// resulting float number. Yet, said numbers are involved in additions and
+	// bit-wise operations with casting to 32-bit integers and final casting
+	// to uint8's, and possible signs on intermediate floats does no harm.
 
 	// inlined load_littleendian()'s
 	var x0 = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);

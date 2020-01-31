@@ -41,6 +41,10 @@ function shr(t: Uint32Array, x: Uint32Array, xi: number, c: number): void {
  */
 function load_bigendian(s: Uint32Array, si: number,
 		x: Uint8Array, i: number): void {
+	// Note that (x << 24) may produce negative number, probably due to
+	// treating intermediate integer as signed, and pulling sign to
+	// resulting float number. Yet, here we further cast this number to
+	// uint32, which drops the negative artifact.
 	s[si] = (x[i+3] | x[i+2] << 8) | (x[i+1] << 16) | (x[i] << 24);
 	s[si+1] = (x[i+7] | x[i+6] << 8) | (x[i+5] << 16) | (x[i+4] << 24);
 }

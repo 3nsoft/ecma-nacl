@@ -57,8 +57,12 @@ function crypto_hashblocks(state: Uint32Array, inArr: Uint8Array,
 		/* Prepare message schedule W. */
 		for (var i=0; i<16; i+=1) {
 			t = inInd + i*4;
-			W[i] = (inArr[t] << 24) + (inArr[t+1] << 16) +
-					(inArr[t+2] << 8) + inArr[t+3];
+			// Note that (x << 24) may produce negative number, probably due to
+			// treating intermediate integer as signed, and pulling sign to
+			// resulting float number. Yet, here we further cast this number to
+			// uint32, which drops the negative artifact.
+			W[i] = (inArr[t] << 24) | (inArr[t+1] << 16) |
+				(inArr[t+2] << 8) | inArr[t+3];
 					 
 		}
 

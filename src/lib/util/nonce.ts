@@ -39,6 +39,10 @@ function subU64(a: U64, b: U64): U64 {
 //		read/write and call of storing ops should be adjusted
 
 function loadLEU64(x: Uint8Array, i: number): U64 {
+	// Note that (x << 24) may produce negative number, probably due to
+	// treating intermediate integer as signed, and pulling sign to
+	// resulting float number. Yet, here we further cast this number to
+	// uint32, which drops the negative artifact.
 	var l = (x[i+3] << 24) | (x[i+2] << 16) | (x[i+1] << 8) | x[i];
 	var h = (x[i+7] << 24) | (x[i+6] << 16) | (x[i+5] << 8) | x[i+4];
 	return new Uint32Array([ l, h ]);
