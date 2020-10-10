@@ -1,9 +1,11 @@
-/* Copyright(c) 2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
-import arrays = require('../util/arrays');
+import { Factory, makeFactory } from '../util/arrays';
 
 /**
  * Arithmetic modulo the group order
@@ -21,7 +23,7 @@ export interface sc25519 extends Uint32Array {
 	 */
 	sc25519: boolean;
 }
-export function make_sc25519(arrFactory: arrays.Factory): sc25519 {
+export function make_sc25519(arrFactory: Factory): sc25519 {
 	return <any> arrFactory.getUint32Array(32);
 } 
 
@@ -29,7 +31,7 @@ export function make_sc25519(arrFactory: arrays.Factory): sc25519 {
  * Analog of constant m in crypto_sign/ed25519/ref/sc25519.c
  * Length === 32.
  */
-var m = new Uint8Array(
+const m = new Uint8Array(
 	[ 0xED, 0xD3, 0xF5, 0x5C, 0x1A, 0x63, 0x12, 0x58,
 	  0xD6, 0x9C, 0xF7, 0xA2, 0xDE, 0xF9, 0xDE, 0x14,
 	  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -39,7 +41,7 @@ var m = new Uint8Array(
  * Analog of constant mu in crypto_sign/ed25519/ref/sc25519.c
  * Length === 33.
  */
-var mu = new Uint8Array(
+const mu = new Uint8Array(
 	[ 0x1B, 0x13, 0x2C, 0x0A, 0xA3, 0xE5, 0x9C, 0xED,
 	  0xA7, 0x29, 0x63, 0x08, 0x5D, 0x21, 0x06, 0x21,
 	  0xEB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -59,21 +61,19 @@ function lt(a: number, b: number): number {
  * Analog of reduce_add_sub in crypto_sign/ed25519/ref/sc25519.c
  * Reduce coefficients of r before calling reduce_add_sub
  */
-function reduce_add_sub(r: sc25519,
-		arrFactory: arrays.Factory): void {
-	var pb = 0;
-	var b: number;
-	var mask: number;
-	var t = arrFactory.getUint8Array(32);
+function reduce_add_sub(r: sc25519, arrFactory: Factory): void {
+	let pb = 0;
+	let b: number;
+	const t = arrFactory.getUint8Array(32);
 
-	for(var i=0; i<32; i+=1) {
+	for(let i=0; i<32; i+=1) {
 		pb += m[i];
 		b = lt(r[i],pb);
 		t[i] = r[i]-pb+(b<<8);
 		pb = b;
 	}
-	mask = (b - 1) | 0;
-	for(var i=0; i<32; i+=1) {
+	const mask = (b! - 1) | 0;
+	for(let i=0; i<32; i+=1) {
 		r[i] ^= mask & (r[i] ^ t[i]);
 	}
 	
@@ -84,56 +84,56 @@ function reduce_add_sub(r: sc25519,
  * Analog of barrett_reduce in crypto_sign/ed25519/ref/sc25519.c
  * Reduce coefficients of x before calling barrett_reduce
  */
-function barrett_reduce(r: sc25519, x: Uint32Array,
-		arrFactory: arrays.Factory): void {
+function barrett_reduce(
+	r: sc25519, x: Uint32Array, arrFactory: Factory
+): void {
 	/* See HAC, Alg. 14.42 */
-	var q2 = arrFactory.getUint32Array(66);
-	var q3 = q2.subarray(33);
-	var r1 = arrFactory.getUint32Array(33);
-	var r2 = arrFactory.getUint32Array(33);
-	var carry: number;
-	var pb = 0;
-	var b: number;
+	const q2 = arrFactory.getUint32Array(66);
+	const q3 = q2.subarray(33);
+	const r1 = arrFactory.getUint32Array(33);
+	const r2 = arrFactory.getUint32Array(33);
 
-	for (var i=0; i<66; i+=1) {
+	for (let i=0; i<66; i+=1) {
 		q2[i] = 0;
 	}
-	for (var i=0; i<33; i+=1) {
+	for (let i=0; i<33; i+=1) {
 		r2[i] = 0;
 	}
 
-	for(var i=0; i<33; i+=1) {
-		for(var j=0; j<33; j+=1) {
+	for(let i=0; i<33; i+=1) {
+		for(let j=0; j<33; j+=1) {
 			if(i+j >= 31) {
 				q2[i+j] += mu[i]*x[j+31];
 			}
 		}
 	}
-	carry = q2[31] >>> 8;
+
+	let carry = q2[31] >>> 8;
 	q2[32] += carry;
 	carry = q2[32] >>> 8;
 	q2[33] += carry;
 
-	for(var i=0; i<33; i+=1) {
+	for(let i=0; i<33; i+=1) {
 		r1[i] = x[i];
 	}
-	for(var i=0; i<32; i+=1) {
-		for(var j=0; j<33; j+=1) {
+	for(let i=0; i<32; i+=1) {
+		for(let j=0; j<33; j+=1) {
 			if(i+j < 33) {
 				r2[i+j] += m[i]*q3[j];
 			}
 		}
 	}
 
-	for(var i=0; i<32; i+=1) {
+	for(let i=0; i<32; i+=1) {
 		carry = r2[i] >>> 8;
 		r2[i+1] += carry;
 		r2[i] &= 0xff;
 	}
 
-	for(var i=0; i<32; i+=1) {
+	let pb = 0;
+	for(let i=0; i<32; i+=1) {
 		pb += r2[i];
-		b = lt(r1[i],pb);
+		let b = lt(r1[i],pb);
 		r[i] = r1[i]-pb+(b<<8);
 		pb = b;
 	}
@@ -151,13 +151,14 @@ function barrett_reduce(r: sc25519, x: Uint32Array,
 /**
  * Analog of sc25519_from32bytes in crypto_sign/ed25519/ref/sc25519.c
  */
-export function from32bytes(r: sc25519, x: Uint8Array,
-		arrFactory: arrays.Factory): void {
-	var t = arrFactory.getUint32Array(64);
-	for(var i=0; i<32; i+=1) {
+export function from32bytes(
+	r: sc25519, x: Uint8Array, arrFactory: Factory
+): void {
+	const t = arrFactory.getUint32Array(64);
+	for(let i=0; i<32; i+=1) {
 		t[i] = x[i];
 	}
-	for(var i=32; i<64; i+=1) {
+	for(let i=32; i<64; i+=1) {
 		t[i] = 0;
 	}
 	barrett_reduce(r, t, arrFactory);
@@ -168,11 +169,12 @@ export function from32bytes(r: sc25519, x: Uint8Array,
 /**
  * Analog of sc25519_from64bytes in crypto_sign/ed25519/ref/sc25519.c
  */
-export function from64bytes(r: sc25519, x: Uint8Array,
-		arrFactory: arrays.Factory): void {
-	var t = arrFactory.getUint32Array(64);
+export function from64bytes(
+	r: sc25519, x: Uint8Array, arrFactory: Factory
+): void {
+	const t = arrFactory.getUint32Array(64);
 	
-	for(var i=0; i<64; i+=1) {
+	for(let i=0; i<64; i+=1) {
 		t[i] = x[i];
 	}
 	barrett_reduce(r, t, arrFactory);
@@ -184,7 +186,7 @@ export function from64bytes(r: sc25519, x: Uint8Array,
  * Analog of sc25519_to32bytes in crypto_sign/ed25519/ref/sc25519.c
  */
 export function to32bytes(r: Uint8Array, x: sc25519): void {
-	for(var i=0; i<32; i+=1) {
+	for(let i=0; i<32; i+=1) {
 		r[i] = x[i];
 	}
 }
@@ -192,14 +194,14 @@ export function to32bytes(r: Uint8Array, x: sc25519): void {
 /**
  * Analog of sc25519_add in crypto_sign/ed25519/ref/sc25519.c
  */
-export function add(r: sc25519, x: sc25519, y: sc25519,
-		arrFactory: arrays.Factory): void {
-	var carry: number;
-	for(var i=0; i<32; i+=1) {
+export function add(
+	r: sc25519, x: sc25519, y: sc25519, arrFactory: Factory
+): void {
+	for(let i=0; i<32; i+=1) {
 		r[i] = x[i] + y[i];
 	}
-	for(var i=0; i<31; i+=1) {
-		carry = r[i] >>> 8;
+	for(let i=0; i<31; i+=1) {
+		let carry = r[i] >>> 8;
 		r[i+1] += carry;
 		r[i] &= 0xff;
 	}
@@ -209,23 +211,23 @@ export function add(r: sc25519, x: sc25519, y: sc25519,
 /**
  * Analog of sc25519_mul in crypto_sign/ed25519/ref/sc25519.c
  */
-export function mul(r: sc25519, x: sc25519, y: sc25519,
-		arrFactory: arrays.Factory): void {
-	var carry: number;
-	var t = arrFactory.getUint32Array(64);
-	for (var i=0; i<64; i+=1) {
+export function mul(
+	r: sc25519, x: sc25519, y: sc25519, arrFactory: Factory
+): void {
+	const t = arrFactory.getUint32Array(64);
+	for (let i=0; i<64; i+=1) {
 		t[i] = 0;
 	}
 
-	for (var i=0; i<32; i+=1) {
-		for (var j=0; j<32; j+=1) {
+	for (let i=0; i<32; i+=1) {
+		for (let j=0; j<32; j+=1) {
 			t[i+j] += x[i] * y[j];
 		}
 	}
 
 	/* Reduce coefficients */
-	for (var i=0; i<63; i+=1) {
-		carry = t[i] >>> 8;
+	for (let i=0; i<63; i+=1) {
+		let carry = t[i] >>> 8;
 		t[i+1] += carry;
 		t[i] &= 0xff;
 	}
@@ -239,7 +241,8 @@ export function mul(r: sc25519, x: sc25519, y: sc25519,
  * Analog of sc25519_window3 in crypto_sign/ed25519/ref/sc25519.c
  */
 export function window3(r: Int8Array, s: sc25519): void {
-	for (var i=0; i<10; i+=1) {
+	let i=0;
+	for (; i<10; i+=1) {
 		r[8*i+0]  =  s[3*i+0]      	 & 7;
 		r[8*i+1]  = (s[3*i+0] >>> 3) & 7;
 		r[8*i+2]  = (s[3*i+0] >>> 6) & 7;
@@ -259,13 +262,13 @@ export function window3(r: Int8Array, s: sc25519): void {
 	r[8*i+4]  = (s[3*i+1] >>> 4) & 7;
 
 	/* Making it signed */
-	var carry = 0;
-	for (var i=0; i<84; i+=1) {
-		r[i] += carry;
-		r[i+1] += r[i] >>> 3;
-		r[i] &= 7;
-		carry = r[i] >>> 2;
-		r[i] -= carry<<3;
+	let carry = 0;
+	for (let j=0; j<84; j+=1) {
+		r[j] += carry;
+		r[j+1] += r[j] >>> 3;
+		r[j] &= 7;
+		carry = r[j] >>> 2;
+		r[j] -= carry<<3;
 	}
 	r[84] += carry;
 }
@@ -274,7 +277,7 @@ export function window3(r: Int8Array, s: sc25519): void {
  * Analog of sc25519_2interleave2 in crypto_sign/ed25519/ref/sc25519.c
  */
 export function interleave2(r: Uint8Array, s1: sc25519, s2: sc25519): void {
-	for(var i=0; i<31; i+=1) {
+	for(let i=0; i<31; i+=1) {
 		r[4*i]   = ( s1[i]        & 3) ^ (( s2[i]        & 3) << 2);
 		r[4*i+1] = ((s1[i] >>> 2) & 3) ^ (((s2[i] >>> 2) & 3) << 2);
 		r[4*i+2] = ((s1[i] >>> 4) & 3) ^ (((s2[i] >>> 4) & 3) << 2);

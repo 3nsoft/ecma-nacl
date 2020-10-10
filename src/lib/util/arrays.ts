@@ -1,7 +1,9 @@
-/* Copyright(c) 2013-2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2013-2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
 /**
  * This module provide an object pool for typed arrays used in the library.
@@ -9,50 +11,50 @@
  * dramatically (due to arrays needed in stream?).
  */
 
-class NumericArrPool<T> {
-	private arrFactory: () => T = null;
-	private numOfElemsInObj: number;
-	private pool = new Array<T>(16);
+class NumericArrPool<T extends { length: number; }> {
+
+	private pool = new Array<T|null>(16);
 	private poolIndex = -1;
 	private wipedIndex = -1;
 	
-	static makeUint8ArrayPool(numOfElemsInObj: number): NumericArrPool<Uint8Array> {
-		var pool = new NumericArrPool<Uint8Array>(numOfElemsInObj);
-		pool.arrFactory = () => {
-			return new Uint8Array(pool.numOfElemsInObj);
-		}
-		return pool;
+	static makeUint8ArrayPool(
+		numOfElemsInObj: number
+	): NumericArrPool<Uint8Array> {
+		return new NumericArrPool<Uint8Array>(
+			() => new Uint8Array(numOfElemsInObj));
 	}
 	
-	static makeUint32ArrayPool(numOfElemsInObj: number): NumericArrPool<Uint32Array> {
-		var pool = new NumericArrPool<Uint32Array>(numOfElemsInObj);
-		pool.arrFactory = () => {
-			return new Uint32Array(pool.numOfElemsInObj);
-		}
-		return pool;
+	static makeUint32ArrayPool(
+		numOfElemsInObj: number
+	): NumericArrPool<Uint32Array> {
+		return new NumericArrPool<Uint32Array>(
+			() => new Uint32Array(numOfElemsInObj));
 	}
 	
-	constructor (numOfElemsInObj: number) {
-		this.numOfElemsInObj = numOfElemsInObj;
+	private constructor (
+		private readonly arrFactory: () => T
+	) {
 		Object.seal(this);
 	}
 
 	/**
 	 * This either creates new, or gets a spare array from the pool.
-	 * Newly created array is not put into pool, because it is given to someone for
-	 * use.
+	 * Newly created array is not put into pool, because it is given to someone
+	 * for use.
 	 * If someone forgets to return it, there shall be no leaking references.
-	 * @returns TypedArray, created by set arrFactory, with set number of elements
-	 * in it.
+	 * @returns TypedArray, created by set arrFactory, with set number of
+	 * elements in it.
 	 * Note that array may and shall have arbitrary data in it, thus, any
 	 * initialization must be performed explicitly.
 	 */
 	get(): T {
-		var arr;
+		let arr: T;
 		if (this.poolIndex < 0) {
 			arr = this.arrFactory();
 		} else {
-			arr = this.pool[this.poolIndex];
+			const pooledArr = this.pool[this.poolIndex];
+			if (!pooledArr) { throw new Error(`Null juggling failed`); }
+			arr = pooledArr;
 			this.pool[this.poolIndex] = null;
 			this.poolIndex -= 1;
 			if (this.poolIndex < this.wipedIndex) {
@@ -75,11 +77,12 @@ class NumericArrPool<T> {
 	 * This wipes all arrays in this pool.
 	 */
 	wipe(): void {
-		var uintArr;
-		for (var i=(this.wipedIndex+1); i<=this.poolIndex; i+=1) {
-			uintArr = <any> this.pool[i];
-			for (var j=0; j<uintArr.length; j+=1) {
-				uintArr[j] = 0;
+		for (let i=(this.wipedIndex+1); i<=this.poolIndex; i+=1) {
+			let uintArr = this.pool[i];
+			if (uintArr) {
+				for (let j=0; j<uintArr.length; j+=1) {
+					uintArr[j] = 0;
+				}
 			}
 		}
 		this.wipedIndex = this.poolIndex;
@@ -87,7 +90,7 @@ class NumericArrPool<T> {
 	
 }
 
-interface mapOfPools<T> {
+interface mapOfPools<T extends { length: number; }> {
 	[len: number]: NumericArrPool<T>;
 }
 
@@ -105,7 +108,8 @@ export interface Factory {
 	
 	/**
 	 * This either creates new, or gets a spare array from the pool.
-	 * Newly created array is not put into pool, because it is given to someone for use.
+	 * Newly created array is not put into pool, because it is given to someone
+	 * for use.
 	 * If someone forgets to return it, there shall be no leaking references.
 	 * @param len is number of elements in desired array.
 	 * @returns Uint32Array, with given number of elements in it.
@@ -122,7 +126,7 @@ export interface Factory {
 	 * When you need to just wipe an array, or wipe a particular view of an
 	 * array, use wipe() method.
 	 */
-	recycle(...arrays): void;
+	recycle(...arrays: (Uint8Array|Uint32Array)[]): void;
 	
 	/**
 	 * This wipes (sets to zeros) all arrays that are located in pools
@@ -138,13 +142,14 @@ export interface Factory {
 	/**
 	 * This zeros all elements of given arrays, or given array views.
 	 * Use this function on things that needs secure cleanup, but should not be
-	 * recycled due to their odd and/or huge size, as it makes pooling inefficient.
+	 * recycled due to their odd and/or huge size, as it makes pooling
+	 * inefficient.
 	 */
-	wipe(...arrays): void;
+	wipe(...arrays: (Uint8Array|Uint32Array)[]): void;
 }
 
 export function makeFactory(): Factory {
-	var f = new ArrFactory();
+	const f = new ArrFactory();
 	return {
 		getUint8Array: f.getUint8Array.bind(f),
 		getUint32Array: f.getUint32Array.bind(f),
@@ -164,17 +169,17 @@ class ArrFactory {
 	}
 	
 	getUint8Array(len: number): Uint8Array {
-		var pool = this.uint8s[len];
+		const pool = this.uint8s[len];
 		return (pool ? pool.get() : new Uint8Array(len));
 	}
 
 	getUint32Array(len: number): Uint32Array {
-		var pool = this.uint32s[len];
+		const pool = this.uint32s[len];
 		return (pool ? pool.get() : new Uint32Array(len));
 	}
 
 	private recycleUint8Array(arr: Uint8Array): void {
-		var pool = this.uint8s[arr.length];
+		let pool = this.uint8s[arr.length];
 		if (!pool) {
 			pool = NumericArrPool.makeUint8ArrayPool(arr.length);
 			this.uint8s[arr.length] = pool;
@@ -183,7 +188,7 @@ class ArrFactory {
 	}
 
 	private recycleUint32Array(arr: Uint32Array): void {
-		var pool = this.uint32s[arr.length];
+		let pool = this.uint32s[arr.length];
 		if (!pool) {
 			pool = NumericArrPool.makeUint32ArrayPool(arr.length);
 			this.uint32s[arr.length] = pool;
@@ -191,14 +196,12 @@ class ArrFactory {
 		pool.recycle(arr);
 	}
 
-	recycle(...arrays): void {
-		var arr;
-		for (var i=0; i<arrays.length; i+=1) {
-			arr = arrays[i];
+	recycle(...arrays: (Uint8Array|Uint32Array)[]): void {
+		for (const arr of arrays) {
 			if (!arr) continue;
-			if ((arr.byteOffset !== 0) ||
-					(arr.length*arr.BYTES_PER_ELEMENT !== arr.buffer.byteLength)) {
-				throw new TypeError("Given, as argument #"+(i+1)+" is a view "+
+			if ((arr.byteOffset !== 0)
+			|| (arr.length*arr.BYTES_PER_ELEMENT !== arr.buffer.byteLength)) {
+				throw new TypeError("One of given arguments is a view "+
 						"of an array, and these are not supposed to be recycled.");
 			}
 			if (arr instanceof Uint8Array) {
@@ -208,20 +211,20 @@ class ArrFactory {
 			} else {
 				throw new TypeError(
 						"This works with typed arrays that have 1 or 4 bytes "+
-						"per element, while given at position "+i+
-						" array claims to have "+arr.BYTES_PER_ELEMENT);
+						"per element, but array claims to have "+
+						(arr as any).BYTES_PER_ELEMENT);
 			}
 		}
 	}
 
 	wipeRecycled(): void {
-		for (var fieldName in this.uint8s) { this.uint8s[fieldName].wipe(); }
-		for (var fieldName in this.uint32s) { this.uint32s[fieldName].wipe(); }
+		for (const len in this.uint8s) { this.uint8s[len].wipe(); }
+		for (const len in this.uint32s) { this.uint32s[len].wipe(); }
 	}
 
 	clear(): void {
-		for (var fieldName in this.uint8s) { delete this.uint8s[fieldName]; }
-		for (var fieldName in this.uint32s) { delete this.uint32s[fieldName]; }
+		for (const len in this.uint8s) { delete this.uint8s[len]; }
+		for (const len in this.uint32s) { delete this.uint32s[len]; }
 	}
 
 	wipe = wipe;
@@ -237,16 +240,18 @@ Object.freeze(ArrFactory.prototype);
  * Use this function on things that needs secure cleanup, but should not be
  * recycled due to their odd and/or huge size, as it makes pooling inefficient.
  */
-export function wipe(...arrays): void {
-	var arr;
-	for (var i=0; i<arrays.length; i+=1) {
-		arr = arrays[i];
+export function wipe(...arrays: (Uint8Array|Uint32Array)[]): void {
+	for (const arr of arrays) {
 		if (!arr) continue;
 		try {
-			for (var j=0; j<arr.length; j+=1) { arr[j] = 0; }
+			for (let j=0; j<arr.length; j+=1) { arr[j] = 0; }
 		} catch (e) {}
 	}
 }
+
+export const makeArrayForOutput: (len: number) => Uint8Array = (
+	(Buffer && (typeof Buffer.alloc === 'function')) ?
+		len => Buffer.alloc(len) : len => new Uint8Array(len));
 
 
 Object.freeze(exports);

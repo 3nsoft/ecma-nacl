@@ -1,11 +1,14 @@
 {
   "name": "ecma-nacl",
-  "version": "2.4.2",
+  "version": "2.5.0",
   "description": "JavaScript (ECMAScript) version of NaCl Cryptographic library",
-  "main": "./dist/lib/ecma-nacl.js",
-  "typings": "./dist/lib/ecma-nacl.d.ts",
+  "main": "./build/lib/ecma-nacl.js",
+  "typings": "./build/lib/ecma-nacl.d.ts",
   "scripts": {
-    "gulp": "./node_modules/.bin/gulp"
+    "build": "tsc -p src",
+    "test": "tsc -p src && node build/tests/jasmine.js",
+    "performance": "tsc -p src && node build/tests/performance/ecma-nacl_runs.js",
+    "comparison": "tsc -p src && node build/tests/performance/comparison.js"
   },
   "repository": {
     "type": "git",
@@ -15,18 +18,12 @@
     "node": "*"
   },
   "devDependencies": {
-    "browserify": "^16.2.3",
-    "gulp": "^3.8.11",
-    "gulp-nodeunit-runner": "^0.2.2",
-    "gulp-rename": "^1.2.2",
-    "gulp-streamify": "0.0.5",
-    "gulp-typescript": "^2.6.0",
-    "gulp-uglify": "^1.2.0",
+    "@types/jasmine": "^3.5.11",
+    "@types/node": "^12.0.4",
+    "jasmine": "^2.4.1",
     "js-nacl": "^0.6.0",
-    "merge2": "^0.3.4",
-    "nodeunit": "^0.11.3",
     "tweetnacl": "^0.13.1",
-    "vinyl-source-stream": "^1.1.0"
+    "typescript": "^3.7.3"
   },
   "keywords": [
     "encryption",
@@ -35,12 +32,11 @@
     "nacl",
     "scrypt"
   ],
-  "contributors": [
-    {
-      "name": "Mikalai Birukou",
-      "email": "mikalai@birukou.net"
-    }
-  ],
+  "author": {
+    "name": "3NSoft Inc.",
+    "url": "https://3nsoft.com",
+    "email": "hq@3nsoft.com"
+  },
   "license": "MPL-2.0",
   "readmeFilename": "README.md"
 }

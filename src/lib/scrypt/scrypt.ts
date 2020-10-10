@@ -1,22 +1,25 @@
-/* Copyright(c) 2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
 /**
  * This is a TypeScrypt rewrite of scrypt-1.1.6.
  * In particular this file contains scrypt algorithm's main part.
  */
 
-import arrays = require('../util/arrays');
-import sha256 = require('./sha256');
+import { Factory, makeFactory } from '../util/arrays';
+import { PBKDF2_SHA256 as sha256_PBKDF2 } from './sha256';
 
 /**
  * Analog of blkcpy in lib/crypto/crypto_scrypt-ref.c
  */
-function blkcpy(dest: Uint8Array, di: number,
-		src: Uint8Array, si: number, len: number): void {
-	for (var i=0; i<len; i+=1) {
+function blkcpy(
+	dest: Uint8Array, di: number, src: Uint8Array, si: number, len: number
+): void {
+	for (let i=0; i<len; i+=1) {
 		dest[di+i] = src[si+i];
 	}
 }
@@ -24,9 +27,10 @@ function blkcpy(dest: Uint8Array, di: number,
 /**
  * Analog of blkxor in lib/crypto/crypto_scrypt-ref.c
  */
-function blkxor(dest: Uint8Array, di: number,
-		src: Uint8Array, si: number, len: number): void {
-	for (var i=0; i<len; i+=1) {
+function blkxor(
+	dest: Uint8Array, di: number, src: Uint8Array, si: number, len: number
+): void {
+	for (let i=0; i<len; i+=1) {
 		dest[di+i] ^= src[si+i];
 	}
 }
@@ -39,41 +43,41 @@ function blkxor(dest: Uint8Array, di: number,
 function salsa20_8(B: Uint8Array): void {
 
 	// inlined load_littleendian()'s
-	var x0 = B[0] | (B[1] << 8) | (B[2] << 16) | (B[3] << 24);
-	var j0 = x0;
-	var x1 = B[4] | (B[5] << 8) | (B[6] << 16) | (B[7] << 24);
-	var j1 = x1;
-	var x2 = B[8] | (B[9] << 8) | (B[10] << 16) | (B[11] << 24);
-	var j2 = x2;
-	var x3 = B[12] | (B[13] << 8) | (B[14] << 16) | (B[15] << 24);
-	var j3 = x3;
-	var x4 = B[16] | (B[17] << 8) | (B[18] << 16) | (B[19] << 24);
-	var j4 = x4;
-	var x5 = B[20] | (B[21] << 8) | (B[22] << 16) | (B[23] << 24);
-	var j5 = x5;
-	var x6 = B[24] | (B[25] << 8) | (B[26] << 16) | (B[27] << 24);
-	var j6 = x6;
-	var x7 = B[28] | (B[29] << 8) | (B[30] << 16) | (B[31] << 24);
-	var j7 = x7;
-	var x8 = B[32] | (B[33] << 8) | (B[34] << 16) | (B[35] << 24);
-	var j8 = x8;
-	var x9 = B[36] | (B[37] << 8) | (B[38] << 16) | (B[39] << 24);
-	var j9 = x9;
-	var x10 = B[40] | (B[41] << 8) | (B[42] << 16) | (B[43] << 24);
-	var j10 = x10;
-	var x11 = B[44] | (B[45] << 8) | (B[46] << 16) | (B[47] << 24);
-	var j11 = x11;
-	var x12 = B[48] | (B[49] << 8) | (B[50] << 16) | (B[51] << 24);
-	var j12 = x12;
-	var x13 = B[52] | (B[53] << 8) | (B[54] << 16) | (B[55] << 24);
-	var j13 = x13;
-	var x14 = B[56] | (B[57] << 8) | (B[58] << 16) | (B[59] << 24);
-	var j14 = x14;
-	var x15 = B[60] | (B[61] << 8) | (B[62] << 16) | (B[63] << 24);
-	var j15 = x15;
-	var t = 0;
+	let x0 = B[0] | (B[1] << 8) | (B[2] << 16) | (B[3] << 24);
+	let j0 = x0;
+	let x1 = B[4] | (B[5] << 8) | (B[6] << 16) | (B[7] << 24);
+	let j1 = x1;
+	let x2 = B[8] | (B[9] << 8) | (B[10] << 16) | (B[11] << 24);
+	let j2 = x2;
+	let x3 = B[12] | (B[13] << 8) | (B[14] << 16) | (B[15] << 24);
+	let j3 = x3;
+	let x4 = B[16] | (B[17] << 8) | (B[18] << 16) | (B[19] << 24);
+	let j4 = x4;
+	let x5 = B[20] | (B[21] << 8) | (B[22] << 16) | (B[23] << 24);
+	let j5 = x5;
+	let x6 = B[24] | (B[25] << 8) | (B[26] << 16) | (B[27] << 24);
+	let j6 = x6;
+	let x7 = B[28] | (B[29] << 8) | (B[30] << 16) | (B[31] << 24);
+	let j7 = x7;
+	let x8 = B[32] | (B[33] << 8) | (B[34] << 16) | (B[35] << 24);
+	let j8 = x8;
+	let x9 = B[36] | (B[37] << 8) | (B[38] << 16) | (B[39] << 24);
+	let j9 = x9;
+	let x10 = B[40] | (B[41] << 8) | (B[42] << 16) | (B[43] << 24);
+	let j10 = x10;
+	let x11 = B[44] | (B[45] << 8) | (B[46] << 16) | (B[47] << 24);
+	let j11 = x11;
+	let x12 = B[48] | (B[49] << 8) | (B[50] << 16) | (B[51] << 24);
+	let j12 = x12;
+	let x13 = B[52] | (B[53] << 8) | (B[54] << 16) | (B[55] << 24);
+	let j13 = x13;
+	let x14 = B[56] | (B[57] << 8) | (B[58] << 16) | (B[59] << 24);
+	let j14 = x14;
+	let x15 = B[60] | (B[61] << 8) | (B[62] << 16) | (B[63] << 24);
+	let j15 = x15;
+	let t = 0;
 	
-	for (var i=0; i<8; i+=2) {
+	for (let i=0; i<8; i+=2) {
 		// inlined rotate()'s
 		t = ( x0+x12);
 		 x4 ^= (t << 7) | (t >>> 25);
@@ -183,15 +187,16 @@ function salsa20_8(B: Uint8Array): void {
  * Compute B = BlockMix_{salsa20/8, r}(B).  The input B must be 128r bytes in
  * length; the temporary space Y must also be the same size.
  */
-function blockmix_salsa8(B: Uint8Array, Y: Uint8Array, r: number,
-		arrFactory: arrays.Factory): void {
-	var X = arrFactory.getUint8Array(64);
+function blockmix_salsa8(
+	B: Uint8Array, Y: Uint8Array, r: number, arrFactory: Factory
+): void {
+	const X = arrFactory.getUint8Array(64);
 
 	/* 1: X <-- B_{2r - 1} */
 	blkcpy(X, 0, B, (2*r - 1)*64, 64);
 
 	/* 2: for i = 0 to 2r - 1 do */
-	for (var i=0; i<2*r; i+=1) {
+	for (let i=0; i<2*r; i+=1) {
 		/* 3: X <-- H(X \xor B_i) */
 		blkxor(X, 0, B, i*64, 64);
 		salsa20_8(X);
@@ -201,10 +206,10 @@ function blockmix_salsa8(B: Uint8Array, Y: Uint8Array, r: number,
 	}
 
 	/* 6: B' <-- (Y_0, Y_2 ... Y_{2r-2}, Y_1, Y_3 ... Y_{2r-1}) */
-	for (var i=0; i<r; i+=1) {
+	for (let i=0; i<r; i+=1) {
 		blkcpy(B, i*64, Y, (i*2)*64, 64);
 	}
-	for (var i=0; i<r; i+=1) {
+	for (let i=0; i<r; i+=1) {
 		blkcpy(B, (i + r)*64, Y, (i*2 + 1)*64, 64);
 	}
 	
@@ -220,7 +225,7 @@ function blockmix_salsa8(B: Uint8Array, Y: Uint8Array, r: number,
  * instead of an original 64-bit.
  */
 function integerifyAndMod(B: Uint8Array, r: number, N: number): number {
-	var i = (2*r - 1)*64;
+	const i = (2*r - 1)*64;
 	return (B[i] + (B[i+1] << 8) +(B[i+2] << 16) + (B[i+3] << 24)) & (N - 1);
 }
 
@@ -239,18 +244,19 @@ interface ProgressIndicator {
  * XY must be 256r bytes in length.  The value N must be a power of 2, and
  * logN < 32.
  */
-function smix(B: Uint8Array, r: number, N: number, V: Uint8Array,
-		XY: Uint8Array, progress: ProgressIndicator,
-		arrFactory: arrays.Factory): void {
-	var X = XY.subarray(0, 128*r);
-	var Y = XY.subarray(128*r);
-	var nextProgInd = progress.deltaN;
+function smix(
+	B: Uint8Array, r: number, N: number, V: Uint8Array,
+	XY: Uint8Array, progress: ProgressIndicator, arrFactory: Factory
+): void {
+	const X = XY.subarray(0, 128*r);
+	const Y = XY.subarray(128*r);
+	let nextProgInd = progress.deltaN;
 
 	/* 1: X <-- B */
 	blkcpy(X, 0, B, 0, 128 * r);
 
 	/* 2: for i = 0 to N - 1 do */
-	for (var i=0; i<N; i+=1) {
+	for (let i=0; i<N; i+=1) {
 		/* 3: V_i <-- X */
 		blkcpy(V, i*(128*r), X, 0, 128*r);
 
@@ -266,8 +272,8 @@ function smix(B: Uint8Array, r: number, N: number, V: Uint8Array,
 	nextProgInd = progress.deltaN;
 	
 	/* 6: for i = 0 to N - 1 do */
-	var j: number;
-	for (var i=0; i<N; i+=1) {
+	let j: number;
+	for (let i=0; i<N; i+=1) {
 		/* 7: j <-- Integerify(X) mod N */
 		j = integerifyAndMod(X, r, N);
 
@@ -295,21 +301,21 @@ function smix(B: Uint8Array, r: number, N: number, V: Uint8Array,
  *
  * Return Uint8Array with result; or throw an error.
  */
-export function scrypt(passwd: Uint8Array, salt: Uint8Array,
-		logN: number, r: number, p: number, dkLen: number,
-		progressCB: (p: number) => void,
-		arrFactory?: arrays.Factory): Uint8Array {
-	if (!arrFactory) { arrFactory = arrays.makeFactory(); }
+export function scrypt(
+	passwd: Uint8Array, salt: Uint8Array, logN: number, r: number, p: number,
+	dkLen: number, progressCB: (p: number) => void, arrFactory?: Factory
+): Uint8Array {
+	if (!arrFactory) { arrFactory = makeFactory(); }
 	
 	if ((logN >= 32) || (logN < 1)) { throw new Error(
-			'Parameter logN is out of bounds.'); }
+		`Parameter logN is out of bounds.`); }
 	if ((r < 1) || (p < 1) || (r*p >= (1 << 30))) { throw new Error(
-			'Parameters p and r are out of bounds.'); }
+		`Parameters p and r are out of bounds.`); }
 	
-	var N = (1 << logN);
-	var V: Uint8Array;
-	var B: Uint8Array;
-	var XY: Uint8Array;
+	let N = (1 << logN);
+	let V: Uint8Array;
+	let B: Uint8Array;
+	let XY: Uint8Array;
 
 	/* Allocate memory. */
 	try {
@@ -322,10 +328,10 @@ export function scrypt(passwd: Uint8Array, salt: Uint8Array,
 	}
 	
 	/* 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen) */
-	sha256.PBKDF2_SHA256(passwd, salt, 1, B, arrFactory);
+	sha256_PBKDF2(passwd, salt, 1, B, arrFactory);
 	progressCB(3);	// set 3% progress after the first PBKDF run
 	
-	var progShow: ProgressIndicator = {
+	const progShow: ProgressIndicator = {
 		completed: 3,
 		deltaWork: 1,
 		deltaN: Math.floor(2*N*p / 93),
@@ -336,14 +342,14 @@ export function scrypt(passwd: Uint8Array, salt: Uint8Array,
 	};
 
 	/* 2: for i = 0 to p - 1 do */
-	for (var i=0; i<p; i+=1) {
+	for (let i=0; i<p; i+=1) {
 		/* 3: B_i <-- MF(B_i, N) */
 		smix(B.subarray(i*128*r), r, N, V, XY, progShow, arrFactory);
 	}
 
 	/* 5: DK <-- PBKDF2(P, B, 1, dkLen) */
-	var buf = arrFactory.getUint8Array(dkLen);
-	sha256.PBKDF2_SHA256(passwd, B, 1, buf, arrFactory);
+	const buf = arrFactory.getUint8Array(dkLen);
+	sha256_PBKDF2(passwd, B, 1, buf, arrFactory);
 	progressCB(99);	// set 99% progress after the last PBKDF run
 
 	arrFactory.wipe(V, B, XY);

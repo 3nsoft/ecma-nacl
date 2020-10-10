@@ -1,25 +1,25 @@
-/* Copyright(c) 2013 - 2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2013 - 2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 /**
  * Testing module lib/boxes/onetimeauth.js
  */
 
-import nu = require('nodeunit');
 import auth = require('../../lib/boxes/onetimeauth');
-import arrays = require('../../lib/util/arrays');
-import testUtil = require('../test-utils');
+import { makeFactory } from '../../lib/util/arrays';
+import { bytesEqual } from '../libs-for-tests/bytes-equal';
 
-var compare = testUtil.compare;
-var arrFactory = arrays.makeFactory();
+const arrFactory = makeFactory();
 
-var rs = new Uint8Array(
+const rs = new Uint8Array(
 	[ 0xee,0xa6,0xa7,0x25,0x1c,0x1e,0x72,0x91,
 	  0x6d,0x11,0xc2,0xcb,0x21,0x4d,0x3c,0x25,
 	  0x25,0x39,0x12,0x1d,0x8e,0x23,0x4e,0x65,
 	  0x2d,0x65,0x1f,0xa4,0xc8,0xcf,0xf8,0x80 ]);
-var c = new Uint8Array(
+const c = new Uint8Array(
 	[ 0x8e,0x99,0x3b,0x9f,0x48,0x68,0x12,0x73,
 	  0xc2,0x96,0x50,0xba,0x32,0xfc,0x76,0xce,
 	  0x48,0x33,0x2e,0xa7,0x16,0x4d,0x96,0xa4,
@@ -38,25 +38,26 @@ var c = new Uint8Array(
 	  0x59,0x9b,0x1f,0x65,0x4c,0xb4,0x5a,0x74,
 	  0xe3,0x55,0xa5 ]);
 
-/**
- * Testing of 'onetimeauth.poly1305', analog to tests/onetimeauth.c
- */
-export function onetimeauth(test: nu.Test) {
+describe(`onetimeauth module`, () => {
 
-	var a = new Uint8Array(16);
+	it(`testing analog to tests/onetimeauth.c`, () => {
+
+		const a = new Uint8Array(16);
 	
-	auth.poly1305(a,c,rs,arrFactory);
+		auth.poly1305(a,c,rs,arrFactory);
+	
+		// taken from tests/onetimeauth.out
+		const expectation = new Uint8Array(
+			[ 0xf3,0xff,0xc7,0x70,0x3f,0x94,0x00,0xe5,
+			  0x2a,0x7d,0xfb,0x4b,0x3d,0x33,0x05,0xd9 ]);
 
-	// taken from tests/onetimeauth.out
-	var expectation = new Uint8Array(
-		[ 0xf3,0xff,0xc7,0x70,0x3f,0x94,0x00,0xe5,
-		  0x2a,0x7d,0xfb,0x4b,0x3d,0x33,0x05,0xd9 ]);
-	compare(test, a, expectation);
+	  expect(bytesEqual(a, expectation)).toBe(true);
+	
+		expect(auth.poly1305_verify(a,c,rs,arrFactory)).toBe(true);
+	
+		arrFactory.wipe(a, c, rs, expectation);
+		arrFactory.wipeRecycled();
+	
+	});
 
-	test.ok(auth.poly1305_verify(a,c,rs,arrFactory));
-
-	arrFactory.wipe(a, c, rs, expectation);
-	arrFactory.wipeRecycled();
-
-	test.done();
-}
+});

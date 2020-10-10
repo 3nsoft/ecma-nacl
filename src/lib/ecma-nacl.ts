@@ -1,7 +1,9 @@
-/* Copyright(c) 2013 - 2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2013 - 2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
 /**
  * This file is an external interface of Ecma-NaCl library.
@@ -14,14 +16,14 @@ export import signing = require('./signing/sign');
 
 import sha512Mod = require('./hash/sha512');
 export module hashing.sha512 {
-	export var hash = sha512Mod.hash;
-	export var makeHasher = sha512Mod.makeHasher;
+	export const hash = sha512Mod.hash;
+	export const makeHasher = sha512Mod.makeHasher;
 }
 Object.freeze(hashing);
 Object.freeze(hashing.sha512);
 
 import scryptMod = require('./scrypt/scrypt');
-export var scrypt = scryptMod.scrypt;
+export const scrypt = scryptMod.scrypt;
 
 export import arrays = require('./util/arrays');
 

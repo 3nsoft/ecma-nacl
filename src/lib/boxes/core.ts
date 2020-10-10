@@ -1,13 +1,9 @@
-/* Copyright(c) 2013-2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
-
-/**
- * This module provides core salsa20 functions.
- */
-
-import arrays = require('../util/arrays');
+/*
+ Copyright(c) 2013-2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
 /**
  * Analog of crypto_core in crypto_core/salsa20/ref/core.c
@@ -20,8 +16,9 @@ import arrays = require('../util/arrays');
  * @param k is Uint8Array, 32 bytes long.
  * @param c is Uint8Array, 16 bytes long.
  */
-export function salsa20(out: Uint8Array, inArr: Uint8Array,
-		k: Uint8Array, c: Uint8Array): void {
+export function salsa20(
+	out: Uint8Array, inArr: Uint8Array, k: Uint8Array, c: Uint8Array
+): void {
 	// Note that (uint8 << 24) may produce negative number, probably due to
 	// treating intermediate integer as signed, and pulling sign to
 	// resulting float number. Yet, said numbers are involved in additions and
@@ -29,41 +26,41 @@ export function salsa20(out: Uint8Array, inArr: Uint8Array,
 	// to uint8's, and possible signs on intermediate floats does no harm.
 
 	// inlined load_littleendian()'s
-	var x0 = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
-	var j0 = x0;
-	var x1 = k[0] | (k[1] << 8) | (k[2] << 16) | (k[3] << 24);
-	var j1 = x1;
-	var x2 = k[4] | (k[5] << 8) | (k[6] << 16) | (k[7] << 24);
-	var j2 = x2;
-	var x3 = k[8] | (k[9] << 8) | (k[10] << 16) | (k[11] << 24);
-	var j3 = x3;
-	var x4 = k[12] | (k[13] << 8) | (k[14] << 16) | (k[15] << 24);
-	var j4 = x4;
-	var x5 = c[4] | (c[5] << 8) | (c[6] << 16) | (c[7] << 24);
-	var j5 = x5;
-	var x6 = inArr[0] | (inArr[1] << 8) | (inArr[2] << 16) | (inArr[3] << 24);
-	var j6 = x6;
-	var x7 = inArr[4] | (inArr[5] << 8) | (inArr[6] << 16) | (inArr[7] << 24);
-	var j7 = x7;
-	var x8 = inArr[8] | (inArr[9] << 8) | (inArr[10] << 16) | (inArr[11] << 24);
-	var j8 = x8;
-	var x9 = inArr[12] | (inArr[13] << 8) | (inArr[14] << 16) | (inArr[15] << 24);
-	var j9 = x9;
-	var x10 = c[8] | (c[9] << 8) | (c[10] << 16) | (c[11] << 24);
-	var j10 = x10;
-	var x11 = k[16] | (k[17] << 8) | (k[18] << 16) | (k[19] << 24);
-	var j11 = x11;
-	var x12 = k[20] | (k[21] << 8) | (k[22] << 16) | (k[23] << 24);
-	var j12 = x12;
-	var x13 = k[24] | (k[25] << 8) | (k[26] << 16) | (k[27] << 24);
-	var j13 = x13;
-	var x14 = k[28] | (k[29] << 8) | (k[30] << 16) | (k[31] << 24);
-	var j14 = x14;
-	var x15 = c[12] | (c[13] << 8) | (c[14] << 16) | (c[15] << 24);
-	var j15 = x15;
-	var t = 0;
+	let x0 = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
+	let j0 = x0;
+	let x1 = k[0] | (k[1] << 8) | (k[2] << 16) | (k[3] << 24);
+	let j1 = x1;
+	let x2 = k[4] | (k[5] << 8) | (k[6] << 16) | (k[7] << 24);
+	let j2 = x2;
+	let x3 = k[8] | (k[9] << 8) | (k[10] << 16) | (k[11] << 24);
+	let j3 = x3;
+	let x4 = k[12] | (k[13] << 8) | (k[14] << 16) | (k[15] << 24);
+	let j4 = x4;
+	let x5 = c[4] | (c[5] << 8) | (c[6] << 16) | (c[7] << 24);
+	let j5 = x5;
+	let x6 = inArr[0] | (inArr[1] << 8) | (inArr[2] << 16) | (inArr[3] << 24);
+	let j6 = x6;
+	let x7 = inArr[4] | (inArr[5] << 8) | (inArr[6] << 16) | (inArr[7] << 24);
+	let j7 = x7;
+	let x8 = inArr[8] | (inArr[9] << 8) | (inArr[10] << 16) | (inArr[11] << 24);
+	let j8 = x8;
+	let x9 = inArr[12] | (inArr[13] << 8) | (inArr[14] << 16) | (inArr[15] << 24);
+	let j9 = x9;
+	let x10 = c[8] | (c[9] << 8) | (c[10] << 16) | (c[11] << 24);
+	let j10 = x10;
+	let x11 = k[16] | (k[17] << 8) | (k[18] << 16) | (k[19] << 24);
+	let j11 = x11;
+	let x12 = k[20] | (k[21] << 8) | (k[22] << 16) | (k[23] << 24);
+	let j12 = x12;
+	let x13 = k[24] | (k[25] << 8) | (k[26] << 16) | (k[27] << 24);
+	let j13 = x13;
+	let x14 = k[28] | (k[29] << 8) | (k[30] << 16) | (k[31] << 24);
+	let j14 = x14;
+	let x15 = c[12] | (c[13] << 8) | (c[14] << 16) | (c[15] << 24);
+	let j15 = x15;
+	let t = 0;
 	
-	for (var i=20; i>0; i-=2) {
+	for (let i=20; i>0; i-=2) {
 		// inlined rotate()'s
 		t = ( x0+x12);
 		 x4 ^= (t << 7) | (t >>> 25);
@@ -170,7 +167,7 @@ export function salsa20(out: Uint8Array, inArr: Uint8Array,
 
 /**
  * Analog of crypto_core in crypto_core/hsalsa20/ref2/core.c
- * It makes nicer, shorter code to have variables of this function sitting in
+ * It makes nicer, shorter code to have letiables of this function sitting in
  * one array, but expanded version runs faster.
  * We inlined load_littleendian(() & store_littleendian(), and rotate()
  * functions from the original source.
@@ -179,8 +176,9 @@ export function salsa20(out: Uint8Array, inArr: Uint8Array,
  * @param k is Uint8Array, 32 bytes long.
  * @param c is Uint8Array, 16 bytes long.
  */
-export function hsalsa20(out: Uint8Array, inArr: Uint8Array,
-		k: Uint8Array, c: Uint8Array): void {
+export function hsalsa20(
+	out: Uint8Array, inArr: Uint8Array, k: Uint8Array, c: Uint8Array
+): void {
 	// Note that (uint8 << 24) may produce negative number, probably due to
 	// treating intermediate integer as signed, and pulling sign to
 	// resulting float number. Yet, said numbers are involved in additions and
@@ -188,25 +186,25 @@ export function hsalsa20(out: Uint8Array, inArr: Uint8Array,
 	// to uint8's, and possible signs on intermediate floats does no harm.
 
 	// inlined load_littleendian()'s
-	var x0 = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
-	var x1 = k[0] | (k[1] << 8) | (k[2] << 16) | (k[3] << 24);
-	var x2 = k[4] | (k[5] << 8) | (k[6] << 16) | (k[7] << 24);
-	var x3 = k[8] | (k[9] << 8) | (k[10] << 16) | (k[11] << 24);
-	var x4 = k[12] | (k[13] << 8) | (k[14] << 16) | (k[15] << 24);
-	var x5 = c[4] | (c[5] << 8) | (c[6] << 16) | (c[7] << 24);
-	var x6 = inArr[0] | (inArr[1] << 8) | (inArr[2] << 16) | (inArr[3] << 24);
-	var x7 = inArr[4] | (inArr[5] << 8) | (inArr[6] << 16) | (inArr[7] << 24);
-	var x8 = inArr[8] | (inArr[9] << 8) | (inArr[10] << 16) | (inArr[11] << 24);
-	var x9 = inArr[12] | (inArr[13] << 8) | (inArr[14] << 16) | (inArr[15] << 24);
-	var x10 = c[8] | (c[9] << 8) | (c[10] << 16) | (c[11] << 24);
-	var x11 = k[16] | (k[17] << 8) | (k[18] << 16) | (k[19] << 24);
-	var x12 = k[20] | (k[21] << 8) | (k[22] << 16) | (k[23] << 24);
-	var x13 = k[24] | (k[25] << 8) | (k[26] << 16) | (k[27] << 24);
-	var x14 = k[28] | (k[29] << 8) | (k[30] << 16) | (k[31] << 24);
-	var x15 = c[12] | (c[13] << 8) | (c[14] << 16) | (c[15] << 24);
-	var t = 0;
+	let x0 = c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
+	let x1 = k[0] | (k[1] << 8) | (k[2] << 16) | (k[3] << 24);
+	let x2 = k[4] | (k[5] << 8) | (k[6] << 16) | (k[7] << 24);
+	let x3 = k[8] | (k[9] << 8) | (k[10] << 16) | (k[11] << 24);
+	let x4 = k[12] | (k[13] << 8) | (k[14] << 16) | (k[15] << 24);
+	let x5 = c[4] | (c[5] << 8) | (c[6] << 16) | (c[7] << 24);
+	let x6 = inArr[0] | (inArr[1] << 8) | (inArr[2] << 16) | (inArr[3] << 24);
+	let x7 = inArr[4] | (inArr[5] << 8) | (inArr[6] << 16) | (inArr[7] << 24);
+	let x8 = inArr[8] | (inArr[9] << 8) | (inArr[10] << 16) | (inArr[11] << 24);
+	let x9 = inArr[12] | (inArr[13] << 8) | (inArr[14] << 16) | (inArr[15] << 24);
+	let x10 = c[8] | (c[9] << 8) | (c[10] << 16) | (c[11] << 24);
+	let x11 = k[16] | (k[17] << 8) | (k[18] << 16) | (k[19] << 24);
+	let x12 = k[20] | (k[21] << 8) | (k[22] << 16) | (k[23] << 24);
+	let x13 = k[24] | (k[25] << 8) | (k[26] << 16) | (k[27] << 24);
+	let x14 = k[28] | (k[29] << 8) | (k[30] << 16) | (k[31] << 24);
+	let x15 = c[12] | (c[13] << 8) | (c[14] << 16) | (c[15] << 24);
+	let t = 0;
 
-	for (var i=20; i>0; i-=2) {
+	for (let i=20; i>0; i-=2) {
 		// inlined rotate()'s
 		t = ( x0+x12);
 		 x4 ^= (t << 7) | (t >>> 25);

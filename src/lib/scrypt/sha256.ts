@@ -1,7 +1,9 @@
-/* Copyright(c) 2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
 /**
  * This is a TypeScrypt rewrite of scrypt-1.1.6.
@@ -9,13 +11,13 @@
  * that are  used in scrypt algorithm.
  */
 
-import arrays = require('../util/arrays');
+import { Factory } from '../util/arrays';
 
 /**
  * Analog of round in crypto_hashblocks/sha256/inplace/blocks.c
  * Length === 64.
  */
-var round = new Uint32Array(
+const round = new Uint32Array(
 	[ 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b,
 	  0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01,
 	  0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7,
@@ -34,28 +36,29 @@ var round = new Uint32Array(
  * Analog of SHA256_Transform in lib/crypto/sha256.h
  * with all C macros expanded.
  */
-function crypto_hashblocks(state: Uint32Array, inArr: Uint8Array,
-		arrFactory: arrays.Factory): number {
-	var W = arrFactory.getUint32Array(64);
-	var inlen = inArr.length;
-	var inInd = 0;
+function crypto_hashblocks(
+	state: Uint32Array, inArr: Uint8Array, arrFactory: Factory
+): number {
+	const W = arrFactory.getUint32Array(64);
+	let inlen = inArr.length;
+	let inInd = 0;
 	
-	var a: number;
-	var b: number;
-	var c: number;
-	var d: number;
-	var e: number;
-	var f: number;
-	var g: number;
-	var h: number;
-	var t0: number;
-	var t1: number;
-	var t: number;
+	let a: number;
+	let b: number;
+	let c: number;
+	let d: number;
+	let e: number;
+	let f: number;
+	let g: number;
+	let h: number;
+	let t0: number;
+	let t1: number;
+	let t: number;
 	
 	while (inlen >= 64) {
 	
 		/* Prepare message schedule W. */
-		for (var i=0; i<16; i+=1) {
+		for (let i=0; i<16; i+=1) {
 			t = inInd + i*4;
 			// Note that (x << 24) may produce negative number, probably due to
 			// treating intermediate integer as signed, and pulling sign to
@@ -66,7 +69,7 @@ function crypto_hashblocks(state: Uint32Array, inArr: Uint8Array,
 					 
 		}
 
-		for (var i=16; i<64; i+=1) {
+		for (let i=16; i<64; i+=1) {
 			t = W[i - 2];
 			// t0 = sigma1(t); expanded below
 			t0 = ((t >>> 17) | (t << 15)) ^
@@ -92,7 +95,7 @@ function crypto_hashblocks(state: Uint32Array, inArr: Uint8Array,
 		
 		a = state[0];	b = state[1];	c = state[2];	d = state[3];
 		e = state[4];	f = state[5];	g = state[6];	h = state[7];
-		for (var i=0; i<64; i+=1) {
+		for (let i=0; i<64; i+=1) {
 			
 			t0 = h + W[i] + round[i];
 			// t0 += Sigma1(e);
@@ -126,9 +129,11 @@ function crypto_hashblocks(state: Uint32Array, inArr: Uint8Array,
 	return inlen;
 }
 
-function hashFromU32toU8(statebytes: Uint8Array, state: Uint32Array) {
-	var u: number;
-	for (var i=0; i<8; i+=1) {
+function hashFromU32toU8(
+	statebytes: Uint8Array, state: Uint32Array
+) {
+	let u: number;
+	for (let i=0; i<8; i+=1) {
 		u = state[i];
 		statebytes[i*4 + 3] = u;
 		statebytes[i*4 + 2] = u >>> 8;
@@ -141,25 +146,26 @@ function hashFromU32toU8(statebytes: Uint8Array, state: Uint32Array) {
  * Analog of iv in crypto_hash/sha256/inplace/ref.c
  * Length === 8.
  */
-var iv = new Uint32Array(
+const iv = new Uint32Array(
 	[ 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
 	  0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 ]);
 
-function hash_padded_block(h: Uint32Array, oddBytes: Uint8Array,
-		totalLen: number, arrFactory: arrays.Factory): void {
-	var padded = arrFactory.getUint8Array(128);
-	var oddLen = oddBytes.length;
-	var bits = arrFactory.getUint32Array(2);
+function hash_padded_block(
+	h: Uint32Array, oddBytes: Uint8Array, totalLen: number, arrFactory: Factory
+): void {
+	const padded = arrFactory.getUint8Array(128);
+	const oddLen = oddBytes.length;
+	const bits = arrFactory.getUint32Array(2);
 	bits[0] = (totalLen / 0x20000000) | 0;
 	bits[1] = totalLen << 3;
 	
-	for (var i=0; i<oddLen; i+=1) {
+	for (let i=0; i<oddLen; i+=1) {
 		padded[i] = oddBytes[i];
 	}
 	padded[oddLen] = 0x80;
 
 	if (oddLen < 56) {
-		for (var i=oddLen+1; i<56; i+=1) {
+		for (let i=oddLen+1; i<56; i+=1) {
 			padded[i] = 0;
 		}
 		padded[56] = bits[0] >>> 24;
@@ -172,7 +178,7 @@ function hash_padded_block(h: Uint32Array, oddBytes: Uint8Array,
 		padded[63] = bits[1];
 		crypto_hashblocks(h, padded.subarray(0, 64), arrFactory);
 	} else {
-		for (var i=oddLen+1; i<120; i+=1) {
+		for (let i=oddLen+1; i<120; i+=1) {
 			padded[i] = 0;
 		}
 		padded[120] = bits[0] >>> 24;
@@ -197,29 +203,28 @@ function hash_padded_block(h: Uint32Array, oddBytes: Uint8Array,
 export interface SHA256_CTX {
 	buf: Uint8Array;
 	bufBytes: number;
-	state: Uint8Array;
+	state: Uint32Array;
 	count: number;
-	arrFactory: arrays.Factory;
+	arrFactory: Factory;
 }
 
-export function makeSha256Ctx(arrFactory: arrays.Factory): SHA256_CTX {
+export function makeSha256Ctx(arrFactory: Factory): SHA256_CTX {
 	return {
 		buf: arrFactory.getUint8Array(64),
 		bufBytes: 0,
 		state: arrFactory.getUint32Array(8),
 		count: 0,
-		arrFactory: arrFactory
+		arrFactory
 	};
 }
 
 export function recycleSha256Ctxs(...ctxs: SHA256_CTX[]): void {
-	var ctx: SHA256_CTX;
-	for (var i = 0; i < ctxs.length; i += 1) {
-		ctx = ctxs[i];
+	for (let i = 0; i < ctxs.length; i += 1) {
+		const ctx = ctxs[i];
 		ctx.arrFactory.recycle(ctx.state, ctx.buf);
-		ctx.state = null;
-		ctx.buf = null;
-		ctx.arrFactory = null;
+		ctx.state = undefined as any;
+		ctx.buf = undefined as any;
+		ctx.arrFactory = undefined as any;
 	}
 }
 
@@ -229,13 +234,14 @@ export function SHA256_Init(ctx: SHA256_CTX): void {
 	ctx.count = 0;
 }
 
-export function SHA256_Update(ctx: SHA256_CTX, m: Uint8Array,
-		mi: number, mlen: number): void {
+export function SHA256_Update(
+	ctx: SHA256_CTX, m: Uint8Array, mi: number, mlen: number
+): void {
 	if (mlen === 0) { return; }
 	ctx.count += mlen;
 	if (ctx.bufBytes > 0) {
-		var delta = Math.min(mlen, 64-ctx.bufBytes);
-		for (var i=0; i<delta; i+=1) {
+		let delta = Math.min(mlen, 64-ctx.bufBytes);
+		for (let i=0; i<delta; i+=1) {
 			ctx.buf[ctx.bufBytes + i] = m[mi+i];
 		}
 		ctx.bufBytes += delta;
@@ -252,15 +258,15 @@ export function SHA256_Update(ctx: SHA256_CTX, m: Uint8Array,
 	ctx.bufBytes = crypto_hashblocks(ctx.state,
 			m.subarray(mi, mi+mlen), ctx.arrFactory);
 	mi += mlen - ctx.bufBytes;
-	for (var i=0; i<ctx.bufBytes; i+=1) {
+	for (let i=0; i<ctx.bufBytes; i+=1) {
 		ctx.buf[i] = m[mi+i];
 	}
 }
 
 export function SHA256_Final(h: Uint8Array, ctx: SHA256_CTX): void {
 	hash_padded_block(ctx.state,
-			ctx.buf.subarray(0, ctx.bufBytes),
-			ctx.count, ctx.arrFactory);
+		ctx.buf.subarray(0, ctx.bufBytes),
+		ctx.count, ctx.arrFactory);
 	ctx.count = 0;
 	ctx.bufBytes = 0;
 	hashFromU32toU8(h, ctx.state);
@@ -273,26 +279,27 @@ export function SHA256_Final(h: Uint8Array, ctx: SHA256_CTX): void {
 interface HMAC_SHA256_CTX {
 	ictx: SHA256_CTX;
 	octx: SHA256_CTX;
-	arrFactory: arrays.Factory;
+	arrFactory: Factory;
 }
 
-function makeHmacSHA256Context(arrFactory: arrays.Factory): HMAC_SHA256_CTX {
+function makeHmacSHA256Context(arrFactory: Factory): HMAC_SHA256_CTX {
 	return {
 		ictx: makeSha256Ctx(arrFactory),
 		octx: makeSha256Ctx(arrFactory),
-		arrFactory: arrFactory
+		arrFactory
 	}
 }
 function recycleHmacSHA256Context(...ctxs: HMAC_SHA256_CTX[]): void {
-	var ctx: HMAC_SHA256_CTX;
-	for (var i = 0; i < ctxs.length; i += 1) {
+	let ctx: HMAC_SHA256_CTX;
+	for (let i = 0; i < ctxs.length; i += 1) {
 		ctx = ctxs[i];
 		recycleSha256Ctxs(ctx.ictx, ctx.octx);
 	}
 }
 
 function copyHmacSHA256Context(
-		dst: HMAC_SHA256_CTX, src: HMAC_SHA256_CTX): void {
+	dst: HMAC_SHA256_CTX, src: HMAC_SHA256_CTX
+): void {
 	dst.ictx.state.set(src.ictx.state);
 	dst.ictx.count =  src.ictx.count;
 	dst.ictx.buf.set(src.ictx.buf);
@@ -303,9 +310,10 @@ function copyHmacSHA256Context(
 	dst.octx.bufBytes = src.octx.bufBytes;
 }
 
-function copyBytes(dst: Uint8Array, di: number,
-		src: Uint8Array, si: number, len: number) {
-	for (var i=0; i<len; i+=1) {
+function copyBytes(
+	dst: Uint8Array, di: number, src: Uint8Array, si: number, len: number
+) {
+	for (let i=0; i<len; i+=1) {
 		dst[di+i] = src[si+i];
 	}
 }
@@ -314,10 +322,11 @@ function copyBytes(dst: Uint8Array, di: number,
  * Analog of HMAC_SHA256_Init in lib/crypto/sha256.c
  * Initialize an HMAC-SHA256 operation with the given key.
  */
-function HMAC_SHA256_Init(ctx: HMAC_SHA256_CTX, K: Uint8Array,
-		KInd: number, Klen: number): void {
-	var pad = ctx.arrFactory.getUint8Array(64);
-	var khash = ctx.arrFactory.getUint8Array(32);
+function HMAC_SHA256_Init(
+	ctx: HMAC_SHA256_CTX, K: Uint8Array, KInd: number, Klen: number
+): void {
+	let pad = ctx.arrFactory.getUint8Array(64);
+	let khash = ctx.arrFactory.getUint8Array(32);
 
 	/* If Klen > 64, the key is really SHA256(K). */
 	if (Klen > 64) {
@@ -331,20 +340,20 @@ function HMAC_SHA256_Init(ctx: HMAC_SHA256_CTX, K: Uint8Array,
 
 	/* Inner SHA256 operation is SHA256(K xor [block of 0x36] || data). */
 	SHA256_Init(ctx.ictx);
-	for (var i=0; i<Klen; i+=1) {
+	for (let i=0; i<Klen; i+=1) {
 		pad[i] = K[i] ^ 0x36;
 	}
-	for (var i=Klen; i<64; i+=1) {
+	for (let i=Klen; i<64; i+=1) {
 		pad[i] = 0x36;
 	}
 	SHA256_Update(ctx.ictx, pad, 0, 64);
 
 	/* Outer SHA256 operation is SHA256(K xor [block of 0x5c] || hash). */
 	SHA256_Init(ctx.octx);
-	for (var i=0; i<Klen; i+=1) {
+	for (let i=0; i<Klen; i+=1) {
 		pad[i] = K[i] ^ 0x5c;
 	}
-	for (var i=Klen; i<64; i+=1) {
+	for (let i=Klen; i<64; i+=1) {
 		pad[i] = 0x5c;
 	}
 	SHA256_Update(ctx.octx, pad, 0, 64);
@@ -356,8 +365,9 @@ function HMAC_SHA256_Init(ctx: HMAC_SHA256_CTX, K: Uint8Array,
  * Analog of HMAC_SHA256_Update in lib/crypto/sha256.c
  * Add bytes to the HMAC-SHA256 operation.
  */
-function HMAC_SHA256_Update(ctx: HMAC_SHA256_CTX, inArr: Uint8Array,
-		inInd: number, len: number): void {
+function HMAC_SHA256_Update(
+	ctx: HMAC_SHA256_CTX, inArr: Uint8Array, inInd: number, len: number
+): void {
 
 	/* Feed data to the inner SHA256 operation. */
 	SHA256_Update(ctx.ictx, inArr, inInd, len);
@@ -368,7 +378,7 @@ function HMAC_SHA256_Update(ctx: HMAC_SHA256_CTX, inArr: Uint8Array,
  * Finish an HMAC-SHA256 operation.
  */
 function HMAC_SHA256_Final(digest: Uint8Array, ctx: HMAC_SHA256_CTX): void {
-	var ihash = ctx.arrFactory.getUint8Array(32);
+	const ihash = ctx.arrFactory.getUint8Array(32);
 
 	/* Finish the inner SHA256 operation. */
 	SHA256_Final(ihash, ctx.ictx);
@@ -398,21 +408,23 @@ export function be32enc(p: Uint8Array, pi: number, x: number): void {
  * Compute PBKDF2(passwd, salt, c, dkLen) using HMAC-SHA256 as the PRF, and
  * write the output to buf, length dkLen, which must be at most 32 * (2^32 - 1).
  */
-export function PBKDF2_SHA256(passwd: Uint8Array, salt: Uint8Array,
-		c: number, buf: Uint8Array, arrFactory: arrays.Factory): void {
-	var dkLen = buf.length;
-	var PShctx = makeHmacSHA256Context(arrFactory);
-	var hctx = makeHmacSHA256Context(arrFactory);
-	var ivec = arrFactory.getUint8Array(4);
-	var U = arrFactory.getUint8Array(32);
-	var T = arrFactory.getUint8Array(32);
+export function PBKDF2_SHA256(
+	passwd: Uint8Array, salt: Uint8Array, c: number, buf: Uint8Array,
+	arrFactory: Factory
+): void {
+	const dkLen = buf.length;
+	const PShctx = makeHmacSHA256Context(arrFactory);
+	const hctx = makeHmacSHA256Context(arrFactory);
+	const ivec = arrFactory.getUint8Array(4);
+	const U = arrFactory.getUint8Array(32);
+	const T = arrFactory.getUint8Array(32);
 
 	/* Compute HMAC state after processing P and S. */
 	HMAC_SHA256_Init(PShctx, passwd, 0, passwd.length);
 	HMAC_SHA256_Update(PShctx, salt, 0, salt.length);
 
 	/* Iterate through the blocks. */
-	for (var i=0; (i*32) < dkLen; i+=1) {
+	for (let i=0; (i*32) < dkLen; i+=1) {
 		/* Generate INT(i + 1). */
 		be32enc(ivec, 0, i+1);
 
@@ -424,20 +436,20 @@ export function PBKDF2_SHA256(passwd: Uint8Array, salt: Uint8Array,
 		/* T_i = U_1 ... */
 		copyBytes(T, 0, U, 0, 32);
 
-		for (var j=2; j<=c; j+=1) {
+		for (let j=2; j<=c; j+=1) {
 			/* Compute U_j. */
 			HMAC_SHA256_Init(hctx, passwd, 0, passwd.length);
 			HMAC_SHA256_Update(hctx, U, 0, 32);
 			HMAC_SHA256_Final(U, hctx);
 
 			/* ... xor U_j ... */
-			for (var k=0; k<32; k+=1) {
+			for (let k=0; k<32; k+=1) {
 				T[k] ^= U[k];
 			}
 		}
 
 		/* Copy as many bytes as necessary into buf. */
-		var clen = dkLen - i*32;
+		let clen = dkLen - i*32;
 		if (clen > 32) {
 			clen = 32;
 		}

@@ -1,12 +1,14 @@
-/* Copyright(c) 2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
-import fe = require('./fe25519');
-import sc = require('./sc25519');
-import ge_base = require('./ge25519_base.data');
-import arrays = require('../util/arrays');
+import * as fe from './fe25519';
+import * as sc from './sc25519';
+import * as ge_base from './ge25519_base.data';
+import { Factory, makeFactory } from '../util/arrays';
 
 /* 
  * Arithmetic on the twisted Edwards curve -x^2 + y^2 = 1 + dx^2y^2 
@@ -23,7 +25,7 @@ export interface ge25519 {
 	y: fe.fe25519;
 	t: fe.fe25519;
 }
-export function make_ge25519(arrFactory: arrays.Factory): ge25519 {
+export function make_ge25519(arrFactory: Factory): ge25519 {
 	return {
 		x: fe.make_fe25519(arrFactory),
 		y: fe.make_fe25519(arrFactory),
@@ -42,7 +44,7 @@ interface ge25519_p1p1 extends ge25519 {
 	 */
 	ge25519_p1: boolean;
 }
-function make_ge25519_p1p1(arrFactory: arrays.Factory): ge25519_p1p1 {
+function make_ge25519_p1p1(arrFactory: Factory): ge25519_p1p1 {
 	return <ge25519_p1p1> make_ge25519(arrFactory);
 }
 
@@ -54,13 +56,13 @@ export interface ge25519_p2 {
 	y: fe.fe25519;
 	z: fe.fe25519;
 }
-function make_ge25519_p2(arrFactory: arrays.Factory): ge25519_p2 {
-	return {
-		x: fe.make_fe25519(arrFactory),
-		y: fe.make_fe25519(arrFactory),
-		z: fe.make_fe25519(arrFactory),
-	};
-}
+// function make_ge25519_p2(arrFactory: Factory): ge25519_p2 {
+// 	return {
+// 		x: fe.make_fe25519(arrFactory),
+// 		y: fe.make_fe25519(arrFactory),
+// 		z: fe.make_fe25519(arrFactory),
+// 	};
+// }
 
 /**
  * Analog of struct ge25519_p3 in crypto_sign/ed25519/ref/ge25519.c
@@ -72,7 +74,7 @@ interface ge25519_p3 extends ge25519 {
 	 */
 	ge25519_p3: boolean;
 }
-function make_ge25519_p3(arrFactory: arrays.Factory): ge25519_p3 {
+function make_ge25519_p3(arrFactory: Factory): ge25519_p3 {
 	return <ge25519_p3> make_ge25519(arrFactory);
 }
 function copy_ge25519_p3(c: ge25519_p3, x: ge25519_p3): void {
@@ -86,22 +88,23 @@ function copy_ge25519_aff(c: ge_base.ge25519_aff, x: ge_base.ge25519_aff): void 
 	c.x.set(x.x);
 	c.y.set(x.y);
 }
-function recycle_ge25519_aff(arrFactory: arrays.Factory,
-		...ges: ge_base.ge25519_aff[]): void {
-	var x: ge_base.ge25519_aff;
-	for (var i = 0; i < ges.length; i += 1) {
-		x = ges[i];
+function recycle_ge25519_aff(
+	arrFactory: Factory, ...ges: ge_base.ge25519_aff[]
+): void {
+	for (let i = 0; i < ges.length; i += 1) {
+		const x = ges[i];
 		arrFactory.recycle(x.x, x.y);
 	}
 }
 
-export function recycle_ge25519(arrFactory: arrays.Factory,
-		...ges: ge25519_p2[]): void;
-export function recycle_ge25519(arrFactory: arrays.Factory,
-		...ges: ge25519[]): void {
-	var x: ge25519;
-	for (var i = 0; i < ges.length; i += 1) {
-		x = ges[i];
+export function recycle_ge25519(
+	arrFactory: Factory, ...ges: ge25519_p2[]
+): void;
+export function recycle_ge25519(
+	arrFactory: Factory, ...ges: ge25519[]
+): void {
+	for (let i = 0; i < ges.length; i += 1) {
+		const x = ges[i];
 		arrFactory.recycle(x.x, x.y, x.z);
 		if (x.t) {
 			arrFactory.recycle(x.t);
@@ -113,7 +116,7 @@ export function recycle_ge25519(arrFactory: arrays.Factory,
  * Analog of constant ge25519_ecd in crypto_sign/ed25519/ref/ge25519.c
  *  d
  */
-var ge25519_ecd = <fe.fe25519> new Uint32Array(
+const ge25519_ecd = <fe.fe25519> new Uint32Array(
 	[ 0xA3, 0x78, 0x59, 0x13, 0xCA, 0x4D, 0xEB, 0x75, 0xAB, 0xD8,
 	  0x41, 0x41, 0x4D, 0x0A, 0x70, 0x00, 0x98, 0xE8, 0x79, 0x77,
 	  0x79, 0x40, 0xC7, 0x8C, 0x73, 0xFE, 0x6F, 0x2B, 0xEE, 0x6C,
@@ -122,7 +125,7 @@ var ge25519_ecd = <fe.fe25519> new Uint32Array(
  * Analog of constant ge25519_ec2d in crypto_sign/ed25519/ref/ge25519.c
  *  2*d
  */
-var ge25519_ec2d = <fe.fe25519> new Uint32Array(
+const ge25519_ec2d = <fe.fe25519> new Uint32Array(
 	[ 0x59, 0xF1, 0xB2, 0x26, 0x94, 0x9B, 0xD6, 0xEB, 0x56, 0xB1,
 	  0x83, 0x82, 0x9A, 0x14, 0xE0, 0x00, 0x30, 0xD1, 0xF3, 0xEE,
 	  0xF2, 0x80, 0x8E, 0x19, 0xE7, 0xFC, 0xDF, 0x56, 0xDC, 0xD9,
@@ -131,7 +134,7 @@ var ge25519_ec2d = <fe.fe25519> new Uint32Array(
  * Analog of constant ge25519_sqrtm1 in crypto_sign/ed25519/ref/ge25519.c
  *  sqrt(-1)
  */
-var ge25519_sqrtm1 = <fe.fe25519> new Uint32Array(
+const ge25519_sqrtm1 = <fe.fe25519> new Uint32Array(
 	[ 0xB0, 0xA0, 0x0E, 0x4A, 0x27, 0x1B, 0xEE, 0xC4, 0x78, 0xE4,
 	  0x2F, 0xAD, 0x06, 0x18, 0x43, 0x2F, 0xA7, 0xD7, 0xFB, 0x3D,
 	  0x99, 0x00, 0x4D, 0x2B, 0x0B, 0xDF, 0xC1, 0x4F, 0x80, 0x24,
@@ -141,7 +144,7 @@ var ge25519_sqrtm1 = <fe.fe25519> new Uint32Array(
  * Analog of constant ge25519_base in crypto_sign/ed25519/ref/ge25519.c
  * Packed coordinates of the base point
  */
-export var base = make_ge25519(arrays.makeFactory());
+export const base = make_ge25519(makeFactory());
 base.x.set(
 	<any> [ 0x1A, 0xD5, 0x25, 0x8F, 0x60, 0x2D, 0x56, 0xC9, 0xB2, 0xA7,
 			0x25, 0x95, 0x60, 0xC7, 0x2C, 0x69, 0x5C, 0xDC, 0xD6, 0xFD,
@@ -168,13 +171,14 @@ base.t.set(
  * crypto_sign/ed25519/ref/ge25519.c
  * Multiples of the base point in affine representation
  */
-var ge25519_base_multiples_affine = ge_base.base_multiples_affine;
+const ge25519_base_multiples_affine = ge_base.base_multiples_affine;
 
 /**
  * Analog of p1p1_to_p2 in crypto_sign/ed25519/ref/ge25519.c
  */
-function p1p1_to_p2(r: ge25519_p2, p: ge25519_p1p1,
-		arrFactory: arrays.Factory): void {
+function p1p1_to_p2(
+	r: ge25519_p2, p: ge25519_p1p1, arrFactory: Factory
+): void {
 	fe.mul(r.x, p.x, p.t, arrFactory);
 	fe.mul(r.y, p.y, p.z, arrFactory);
 	fe.mul(r.z, p.z, p.t, arrFactory);
@@ -183,8 +187,9 @@ function p1p1_to_p2(r: ge25519_p2, p: ge25519_p1p1,
 /**
  * Analog of p1p1_to_p3 in crypto_sign/ed25519/ref/ge25519.c
  */
-function p1p1_to_p3(r: ge25519_p3, p: ge25519_p1p1,
-		arrFactory: arrays.Factory): void {
+function p1p1_to_p3(
+	r: ge25519_p3, p: ge25519_p1p1, arrFactory: Factory
+): void {
 	p1p1_to_p2(<ge25519_p2> r, p, arrFactory);
 	fe.mul(r.t, p.x, p.y, arrFactory);
 }
@@ -192,19 +197,20 @@ function p1p1_to_p3(r: ge25519_p3, p: ge25519_p1p1,
 /**
  * Analog of ge25519_mixadd2 in crypto_sign/ed25519/ref/ge25519.c
  */
-function ge25519_mixadd2(r: ge25519_p3, q: ge_base.ge25519_aff,
-		arrFactory: arrays.Factory): void {
-	var a = fe.make_fe25519(arrFactory);
-	var b = fe.make_fe25519(arrFactory);
-	var t1 = fe.make_fe25519(arrFactory);
-	var t2 = fe.make_fe25519(arrFactory);
-	var c = fe.make_fe25519(arrFactory);
-	var d = fe.make_fe25519(arrFactory);
-	var e = fe.make_fe25519(arrFactory);
-	var f = fe.make_fe25519(arrFactory);
-	var g = fe.make_fe25519(arrFactory);
-	var h = fe.make_fe25519(arrFactory);
-	var qt = fe.make_fe25519(arrFactory);
+function ge25519_mixadd2(
+	r: ge25519_p3, q: ge_base.ge25519_aff, arrFactory: Factory
+): void {
+	const a = fe.make_fe25519(arrFactory);
+	const b = fe.make_fe25519(arrFactory);
+	const t1 = fe.make_fe25519(arrFactory);
+	const t2 = fe.make_fe25519(arrFactory);
+	const c = fe.make_fe25519(arrFactory);
+	const d = fe.make_fe25519(arrFactory);
+	const e = fe.make_fe25519(arrFactory);
+	const f = fe.make_fe25519(arrFactory);
+	const g = fe.make_fe25519(arrFactory);
+	const h = fe.make_fe25519(arrFactory);
+	const qt = fe.make_fe25519(arrFactory);
 	
 	fe.mul(qt, q.x, q.y, arrFactory);
 	fe.sub(a, r.y, r.x, arrFactory); /* A = (Y1-X1)*(Y2-X2) */
@@ -231,13 +237,14 @@ function ge25519_mixadd2(r: ge25519_p3, q: ge_base.ge25519_aff,
 /**
  * Analog of add_p1p1 in crypto_sign/ed25519/ref/ge25519.c
  */
-function add_p1p1(r: ge25519_p1p1, p: ge25519_p3, q: ge25519_p3,
-		arrFactory: arrays.Factory): void {
-	var a = fe.make_fe25519(arrFactory);
-	var b = fe.make_fe25519(arrFactory);
-	var c = fe.make_fe25519(arrFactory);
-	var d = fe.make_fe25519(arrFactory);
-	var t = fe.make_fe25519(arrFactory);
+function add_p1p1(
+	r: ge25519_p1p1, p: ge25519_p3, q: ge25519_p3, arrFactory: Factory
+): void {
+	const a = fe.make_fe25519(arrFactory);
+	const b = fe.make_fe25519(arrFactory);
+	const c = fe.make_fe25519(arrFactory);
+	const d = fe.make_fe25519(arrFactory);
+	const t = fe.make_fe25519(arrFactory);
 	
 	fe.sub(a, p.y, p.x, arrFactory); /* A = (Y1-X1)*(Y2-X2) */
 	fe.sub(t, q.y, q.x, arrFactory);
@@ -261,12 +268,13 @@ function add_p1p1(r: ge25519_p1p1, p: ge25519_p3, q: ge25519_p3,
  * Analog of dbl_p1p1 in crypto_sign/ed25519/ref/ge25519.c
  * See http://www.hyperelliptic.org/EFD/g1p/auto-twisted-extended-1.html#doubling-dbl-2008-hwcd
  */
-function dbl_p1p1(r: ge25519_p1p1, p: ge25519_p2,
-		arrFactory: arrays.Factory): void {
-	var a = fe.make_fe25519(arrFactory);
-	var b = fe.make_fe25519(arrFactory);
-	var c = fe.make_fe25519(arrFactory);
-	var d = fe.make_fe25519(arrFactory);
+function dbl_p1p1(
+	r: ge25519_p1p1, p: ge25519_p2, arrFactory: Factory
+): void {
+	const a = fe.make_fe25519(arrFactory);
+	const b = fe.make_fe25519(arrFactory);
+	const c = fe.make_fe25519(arrFactory);
+	const d = fe.make_fe25519(arrFactory);
 	
 	fe.square(a, p.x, arrFactory);
 	fe.square(b, p.y, arrFactory);
@@ -313,10 +321,11 @@ function negative(b: number): number {
 /**
  * Analog of choose_t in crypto_sign/ed25519/ref/ge25519.c
  */
-function choose_t(t: ge_base.ge25519_aff, pos: number, b: number,
-		arrFactory: arrays.Factory): void {
+function choose_t(
+	t: ge_base.ge25519_aff, pos: number, b: number, arrFactory: Factory
+): void {
 	/* constant time */
-	var v = fe.make_fe25519(arrFactory);
+	const v = fe.make_fe25519(arrFactory);
 	
 	copy_ge25519_aff(t, ge25519_base_multiples_affine[5*pos+0]);
 	cmov_aff(t, ge25519_base_multiples_affine[5*pos+1],equal(b,1) | equal(b,-1));
@@ -347,19 +356,21 @@ function setneutral(r: ge25519): void {
  * Analog of ge25519_unpackneg_vartime in crypto_sign/ed25519/ref/ge25519.c
  * return true on success, false otherwise
  */
-export function unpackneg_vartime(r: ge25519, p: Uint8Array,
-		arrFactory: arrays.Factory): boolean;
-export function unpackneg_vartime(r: ge25519_p3, p: Uint8Array,
-		arrFactory: arrays.Factory): boolean {
-	var t = fe.make_fe25519(arrFactory);
-	var chk = fe.make_fe25519(arrFactory);
-	var num = fe.make_fe25519(arrFactory);
-	var den = fe.make_fe25519(arrFactory);
-	var den2 = fe.make_fe25519(arrFactory);
-	var den4 = fe.make_fe25519(arrFactory);
-	var den6 = fe.make_fe25519(arrFactory);
+export function unpackneg_vartime(
+	r: ge25519, p: Uint8Array, arrFactory: Factory
+): boolean;
+export function unpackneg_vartime(
+	r: ge25519_p3, p: Uint8Array, arrFactory: Factory
+): boolean {
+	const t = fe.make_fe25519(arrFactory);
+	const chk = fe.make_fe25519(arrFactory);
+	const num = fe.make_fe25519(arrFactory);
+	const den = fe.make_fe25519(arrFactory);
+	const den2 = fe.make_fe25519(arrFactory);
+	const den4 = fe.make_fe25519(arrFactory);
+	const den6 = fe.make_fe25519(arrFactory);
 	fe.setone(r.z);
-	var par = p[31] >>> 7;
+	const par = p[31] >>> 7;
 	fe.unpack(r.y, p); 
 	fe.square(num, r.y, arrFactory); /* x = y^2 */
 	fe.mul(den, num, ge25519_ecd, arrFactory); /* den = dy^2 */
@@ -410,13 +421,15 @@ export function unpackneg_vartime(r: ge25519_p3, p: Uint8Array,
 /**
  * Analog of ge25519_pack in crypto_sign/ed25519/ref/ge25519.c
  */
-export function pack(r: Uint8Array, p: ge25519,
-		arrFactory: arrays.Factory): void;
-export function pack(r: Uint8Array, p: ge25519_p3,
-		arrFactory: arrays.Factory): void {
-	var tx = fe.make_fe25519(arrFactory);
-	var ty = fe.make_fe25519(arrFactory);
-	var zi = fe.make_fe25519(arrFactory);
+export function pack(
+	r: Uint8Array, p: ge25519, arrFactory: Factory
+): void;
+export function pack(
+	r: Uint8Array, p: ge25519_p3, arrFactory: Factory
+): void {
+	const tx = fe.make_fe25519(arrFactory);
+	const ty = fe.make_fe25519(arrFactory);
+	const zi = fe.make_fe25519(arrFactory);
 	
 	fe.invert(zi, p.z, arrFactory); 
 	fe.mul(tx, p.x, zi, arrFactory);
@@ -433,19 +446,21 @@ export function pack(r: Uint8Array, p: ge25519_p3,
  * computes [s1]p1 + [s2]p2
  */
 export function double_scalarmult_vartime(
-		r: ge25519, p1: ge25519, s1: sc.sc25519,
-		p2: ge25519, s2: sc.sc25519, arF: arrays.Factory): void;
+	r: ge25519, p1: ge25519, s1: sc.sc25519,
+	p2: ge25519, s2: sc.sc25519, arF: Factory
+): void;
 export function double_scalarmult_vartime(
-		r: ge25519_p3, p1: ge25519_p3, s1: sc.sc25519,
-		p2: ge25519_p3, s2: sc.sc25519, arF: arrays.Factory): void {
-	var tp1p1 = make_ge25519_p1p1(arF);
-	var pre = new Array<ge25519_p3>(16);
-	for (var i=0; i<16; i+=1) {
-		if ((i !== 1) || (i !== 4)) {
+	r: ge25519_p3, p1: ge25519_p3, s1: sc.sc25519,
+	p2: ge25519_p3, s2: sc.sc25519, arF: Factory
+): void {
+	const tp1p1 = make_ge25519_p1p1(arF);
+	const pre = new Array<ge25519_p3>(16);
+	for (let i=0; i<16; i+=1) {
+		if ((i !== 1) && (i !== 4)) {
 			pre[i] = make_ge25519_p3(arF);
 		}
 	}
-	var b = arF.getUint8Array(127);
+	const b = arF.getUint8Array(127);
 
 	/* precomputation                                                        s2 s1 */
 	setneutral(pre[0]);                                                      /* 00 00 */
@@ -469,7 +484,7 @@ export function double_scalarmult_vartime(
 
 	/* scalar multiplication */
 	copy_ge25519_p3(r, pre[b[126]]);
-	for(var i=125; i>=0; i-=1) {
+	for(let i=125; i>=0; i-=1) {
 		dbl_p1p1(tp1p1, <ge25519_p2> r, arF);
 		p1p1_to_p2(<ge25519_p2> r, tp1p1, arF);
 		dbl_p1p1(tp1p1, <ge25519_p2> r, arF);
@@ -482,7 +497,7 @@ export function double_scalarmult_vartime(
 	}
 	
 	recycle_ge25519(arF, tp1p1);
-	for (var i=0; i<16; i+=1) {
+	for (let i=0; i<16; i+=1) {
 		if ((i !== 1) && (i !== 4)) {
 			recycle_ge25519(arF, pre[i]);
 		}
@@ -493,18 +508,20 @@ export function double_scalarmult_vartime(
 /**
  * Analog of ge25519_scalarmult_base in crypto_sign/ed25519/ref/ge25519.c
  */
-export function scalarmult_base(r: ge25519, s: sc.sc25519,
-		arrFactory: arrays.Factory): void
-export function scalarmult_base(r: ge25519_p3, s: sc.sc25519,
-		arrFactory: arrays.Factory): void {
-	var b = new Int8Array(85);
-	var t = ge_base.make_ge25519_aff(arrFactory);
+export function scalarmult_base(
+	r: ge25519, s: sc.sc25519, arrFactory: Factory
+): void
+export function scalarmult_base(
+	r: ge25519_p3, s: sc.sc25519, arrFactory: Factory
+): void {
+	const b = new Int8Array(85);
+	const t = ge_base.make_ge25519_aff(arrFactory);
 	sc.window3(b,s);
 
 	choose_t(<ge_base.ge25519_aff> <any> r, 0, b[0], arrFactory);
 	fe.setone(r.z);
 	fe.mul(r.t, r.x, r.y, arrFactory);
-	for(var i=1; i<85; i+=1) {
+	for(let i=1; i<85; i+=1) {
 		choose_t(t, i, b[i], arrFactory);
 		ge25519_mixadd2(r, t, arrFactory);
 	}

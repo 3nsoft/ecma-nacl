@@ -1,7 +1,9 @@
-/* Copyright(c) 2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
 /*
  * This contains implementation of SHA512.
@@ -17,21 +19,21 @@
  * Notice that in array we keep high int first, with lower int following.
  */
 
-import arrays = require('../util/arrays');
+import { Factory, makeFactory } from '../util/arrays';
 
 /**
  * This adds 64 bit integer from x into s.
  */
 function addInto(s: Uint32Array, si: number, x: Uint32Array, xi: number): void {
-	var h = s[si]  + x[xi];
-	var l = s[si+1]+ x[xi+1];
+	const h = s[si]  + x[xi];
+	const l = s[si+1]+ x[xi+1];
 	s[si] = h + ((l / 0x100000000) | 0);
 	s[si+1] = l;
 }
 
 function shr(t: Uint32Array, x: Uint32Array, xi: number, c: number): void {
-	var h = x[xi];
-	var l = x[xi+1];
+	const h = x[xi];
+	const l = x[xi+1];
 	t[0] = h >>> c;
 	t[1] = (h << (32 - c)) | (l >>> c);
 }
@@ -39,8 +41,9 @@ function shr(t: Uint32Array, x: Uint32Array, xi: number, c: number): void {
 /**
  * Analog of load_bigendian in crypto_hashblocks/sha512/inplace/blocks.c
  */
-function load_bigendian(s: Uint32Array, si: number,
-		x: Uint8Array, i: number): void {
+function load_bigendian(
+	s: Uint32Array, si: number, x: Uint8Array, i: number
+): void {
 	// Note that (x << 24) may produce negative number, probably due to
 	// treating intermediate integer as signed, and pulling sign to
 	// resulting float number. Yet, here we further cast this number to
@@ -52,10 +55,11 @@ function load_bigendian(s: Uint32Array, si: number,
 /**
  * Analog of store_bigendian in crypto_hashblocks/sha512/inplace/blocks.c
  */
-function store_bigendian(x: Uint8Array, i: number,
-		u: Uint32Array, ui: number): void {
-	var h = u[ui];
-	var l = u[ui+1];
+function store_bigendian(
+	x: Uint8Array, i: number, u: Uint32Array, ui: number
+): void {
+	const h = u[ui];
+	const l = u[ui+1];
 	x[i+7] = l;
 	x[i+6] = l >>> 8;
 	x[i+5] = l >>> 16;
@@ -69,10 +73,11 @@ function store_bigendian(x: Uint8Array, i: number,
 /**
  * Analog of macro ROTR in crypto_hashblocks/sha512/inplace/blocks.c
  */
-function ROTRandXorInto(t: Uint32Array,
-		x: Uint32Array, xi: number, c: number): void {
-	var h = x[xi];
-	var l = x[xi+1];
+function ROTRandXorInto(
+	t: Uint32Array, x: Uint32Array, xi: number, c: number
+): void {
+	const h = x[xi];
+	const l = x[xi+1];
 	if (c <= 32) {
 		t[0] ^= (l << (32 - c)) | (h >>> c);
 		t[1] ^= (h << (32 - c)) | (l >>> c);
@@ -85,10 +90,11 @@ function ROTRandXorInto(t: Uint32Array,
 /**
  * Analog of macro Ch in crypto_hashblocks/sha512/inplace/blocks.c
  */
-function Ch(t: Uint32Array, r: Uint32Array,
-		xi: number, yi: number, zi: number): void {
-	var xh = r[xi];
-	var xl = r[xi+1];
+function Ch(
+	t: Uint32Array, r: Uint32Array, xi: number, yi: number, zi: number
+): void {
+	const xh = r[xi];
+	const xl = r[xi+1];
 	t[0] = (xh & r[yi]) ^ (~xh & r[zi]);
 	t[1] = (xl & r[yi+1]) ^ (~xl & r[zi+1]);
 }
@@ -96,14 +102,15 @@ function Ch(t: Uint32Array, r: Uint32Array,
 /**
  * Analog of macro Maj in crypto_hashblocks/sha512/inplace/blocks.c
  */
-function Maj(t: Uint32Array, r: Uint32Array,
-		xi: number, yi: number, zi: number): void {
-	var xh = r[xi];
-	var xl = r[xi+1];
-	var yh = r[yi];
-	var yl = r[yi+1];
-	var zh = r[zi];
-	var zl = r[zi+1];
+function Maj(
+	t: Uint32Array, r: Uint32Array, xi: number, yi: number, zi: number
+): void {
+	const xh = r[xi];
+	const xl = r[xi+1];
+	const yh = r[yi];
+	const yl = r[yi+1];
+	const zh = r[zi];
+	const zl = r[zi+1];
 	t[0] = (xh & yh) ^ (xh & zh) ^ (yh & zh);
 	t[1] = (xl & yl) ^ (xl & zl) ^ (yl & zl);
 }
@@ -151,8 +158,10 @@ function sigma1(t: Uint32Array, x: Uint32Array, xi: number): void {
 /**
  * Analog of macro M in crypto_hashblocks/sha512/inplace/blocks.c
  */
-function M(w: Uint32Array, i0: number, i14: number, i9: number, i1: number,
-		t: Uint32Array): void {
+function M(
+	w: Uint32Array, i0: number, i14: number, i9: number, i1: number,
+	t: Uint32Array
+): void {
 	sigma1(t, w, i14);
 	addInto(w, i0, t, 0);
 	addInto(w, i0, w, i9);
@@ -185,10 +194,11 @@ function EXPAND(w: Uint32Array, t: Uint32Array): void {
 /**
  * Analog of macro F in crypto_hashblocks/sha512/inplace/blocks.c
  */
-function F(r: Uint32Array, i0: number, i1: number, i2: number, i3: number,
-		i4: number, i5: number, i6: number, i7: number,
-		w: Uint32Array, wi: number, k: Uint32Array, ki: number,
-		t: Uint32Array): void {
+function F(
+	r: Uint32Array, i0: number, i1: number, i2: number, i3: number,
+	i4: number, i5: number, i6: number, i7: number,
+	w: Uint32Array, wi: number, k: Uint32Array, ki: number, t: Uint32Array
+): void {
 	Sigma1(t, r, i4);
 	addInto(r, i7, t, 0);
 	Ch(t, r, i4, i5, i6);
@@ -207,7 +217,7 @@ function F(r: Uint32Array, i0: number, i1: number, i2: number, i3: number,
 /**
  * Analog of round in crypto_hashblocks/sha512/inplace/blocks.c
  */
-var round = new Uint32Array([
+const round = new Uint32Array([
 	0x428a2f98, 0xd728ae22, 0x71374491, 0x23ef65cd, 0xb5c0fbcf, 0xec4d3b2f,
 	0xe9b5dba5, 0x8189dbbc, 0x3956c25b, 0xf348b538, 0x59f111f1, 0xb605d019,
 	0x923f82a4, 0xaf194f9b, 0xab1c5ed5, 0xda6d8118, 0xd807aa98, 0xa3030242,
@@ -261,23 +271,24 @@ function G(r: Uint32Array, w: Uint32Array, i: number, t: Uint32Array): void {
 /**
  * Analog of crypto_hashblocks in crypto_hashblocks/sha512/inplace/blocks.c
  */
-function crypto_hashblocks(statebytes: Uint8Array, inArr: Uint8Array,
-		arrFactory: arrays.Factory): number {
-	var state = arrFactory.getUint32Array(16);
-	var r = arrFactory.getUint32Array(16);
-	var w = arrFactory.getUint32Array(32);
-	var t = arrFactory.getUint32Array(2);
-	var inlen = inArr.length;
-	var inInd = 0;
+function crypto_hashblocks(
+	statebytes: Uint8Array, inArr: Uint8Array, arrFactory: Factory
+): number {
+	const state = arrFactory.getUint32Array(16);
+	const r = arrFactory.getUint32Array(16);
+	const w = arrFactory.getUint32Array(32);
+	const t = arrFactory.getUint32Array(2);
+	let inlen = inArr.length;
+	let inInd = 0;
 
-	for (var i=0; i<8; i+=1) {
+	for (let i=0; i<8; i+=1) {
 		load_bigendian(r, i*2, statebytes, i*8);
 	}
 	state.set(r);
 
 	while (inlen >= 128) {
 		
-		for (var i=0; i<16; i+=1) {
+		for (let i=0; i<16; i+=1) {
 			load_bigendian(w, i*2, inArr, inInd + i*8);
 		}
 
@@ -291,7 +302,7 @@ function crypto_hashblocks(statebytes: Uint8Array, inArr: Uint8Array,
 		EXPAND(w, t);
 		G(r, w, 64, t);
 
-		for (var i=0; i<8; i+=1) {
+		for (let i=0; i<8; i+=1) {
 			addInto(r, i*2, state, i*2);
 		}
 		state.set(r);
@@ -300,7 +311,7 @@ function crypto_hashblocks(statebytes: Uint8Array, inArr: Uint8Array,
 		inlen -= 128;
 	}
 
-	for (var i=0; i<8; i+=1) {
+	for (let i=0; i<8; i+=1) {
 		store_bigendian(statebytes, i*8, state, i*2);
 	}
 	
@@ -313,7 +324,7 @@ function crypto_hashblocks(statebytes: Uint8Array, inArr: Uint8Array,
  * Analog of iv in crypto_hash/sha512/ref/hash.c
  * Length === 64.
  */
-var iv = new Uint8Array(
+const iv = new Uint8Array(
 	[ 0x6a, 0x09, 0xe6, 0x67, 0xf3, 0xbc, 0xc9, 0x08,
 	  0xbb, 0x67, 0xae, 0x85, 0x84, 0xca, 0xa7, 0x3b,
 	  0x3c, 0x6e, 0xf3, 0x72, 0xfe, 0x94, 0xf8, 0x2b,
@@ -323,27 +334,28 @@ var iv = new Uint8Array(
 	  0x1f, 0x83, 0xd9, 0xab, 0xfb, 0x41, 0xbd, 0x6b,
 	  0x5b, 0xe0, 0xcd, 0x19, 0x13, 0x7e, 0x21, 0x79 ]);
 
-function hash_padded_block(h: Uint8Array, oddBytes: Uint8Array,
-		totalLen: number, arrFactory: arrays.Factory): void {
-	var padded = arrFactory.getUint8Array(256);
-	var oddLen = oddBytes.length;
-	var bytes = arrFactory.getUint32Array(2);
+function hash_padded_block(
+	h: Uint8Array, oddBytes: Uint8Array, totalLen: number, arrFactory: Factory
+): void {
+	const padded = arrFactory.getUint8Array(256);
+	let oddLen = oddBytes.length;
+	const bytes = arrFactory.getUint32Array(2);
 	bytes[0] = (totalLen / 0x20000000) | 0;
 	bytes[1] = totalLen << 3;
 
-	for (var i=0; i<oddLen; i+=1) {
+	for (let i=0; i<oddLen; i+=1) {
 		padded[i] = oddBytes[i];
 	}
 	padded[oddLen] = 0x80;
 
 	if (oddLen < 112) {
-		for (var i=oddLen+1; i<120; i+=1) {
+		for (let i=oddLen+1; i<120; i+=1) {
 			padded[i] = 0;
 		}
 		store_bigendian(padded, 120, bytes, 0);
 		crypto_hashblocks(h, padded.subarray(0,128), arrFactory);
 	} else {
-		for (var i=oddLen+1; i<248; i+=1) {
+		for (let i=oddLen+1; i<248; i+=1) {
 			padded[i] = 0;
 		}
 		store_bigendian(padded, 248, bytes, 0);
@@ -358,21 +370,22 @@ function hash_padded_block(h: Uint8Array, oddBytes: Uint8Array,
  * with ending part of make hash of padded arranged into its
  * own function.
  */
-export function hash(inArr: Uint8Array,
-		arrFactory?: arrays.Factory): Uint8Array {
+export function hash(
+	inArr: Uint8Array, arrFactory?: Factory
+): Uint8Array {
 
-	if (inArr.length > 0xffffffffffff) { new Error("This implementation "+
-			"cannot handle byte arrays longer than 2^48 (256 TB)."); }
+	if (inArr.length > 0xffffffffffff) { throw new Error(
+		`This implementation cannot handle byte arrays longer than 2^48 (256 TB).`); }
 	if (!arrFactory) {
-		arrFactory = arrays.makeFactory();
+		arrFactory = makeFactory();
 	}
 	
-	var h = arrFactory.getUint8Array(64);
-	var totalLen = inArr.length;
+	const h = arrFactory.getUint8Array(64);
+	const totalLen = inArr.length;
 
 	h.set(iv);
 
-	var oddLen = crypto_hashblocks(h, inArr, arrFactory);
+	const oddLen = crypto_hashblocks(h, inArr, arrFactory);
 	inArr = inArr.subarray(totalLen - oddLen);
 	
 	hash_padded_block(h, inArr, totalLen, arrFactory);
@@ -406,76 +419,77 @@ export interface Hasher {
 	destroy(): void;
 }
 
-export function makeHasher(isSingleUse: boolean = true,
-		arrFactory?: arrays.Factory): Hasher {
-	if (!arrFactory) { arrFactory = arrays.makeFactory(); }
+export function makeHasher(
+	isSingleUse: boolean = true, arrFactory?: Factory
+): Hasher {
+	if (!arrFactory) { arrFactory = makeFactory(); }
 	
-	var cache = arrFactory.getUint8Array(128);
-	var cachedBytes = 0;
-	var totalLen = 0;
-	var h: Uint8Array = null;
+	let cache = arrFactory.getUint8Array(128);
+	let cachedBytes = 0;
+	let totalLen = 0;
+	let h: Uint8Array|undefined = undefined;
 	
 	return {
 		update: function(m: Uint8Array): void {
-			if (!cache) { throw new Error("Cannot use destroyed hasher."); }
+			if (!cache) { throw new Error(`Cannot use destroyed hasher.`); }
 			if (m.length === 0) { return; }
 			totalLen += m.length;
 			if (!h) {
-				h = arrFactory.getUint8Array(64);
+				h = arrFactory!.getUint8Array(64);
 				h.set(iv);
 			}
 			if (cachedBytes > 0) {
-				var delta = Math.min(m.length, 128-cachedBytes);
-				for (var i=0; i<delta; i+=1) {
+				const delta = Math.min(m.length, 128-cachedBytes);
+				for (let i=0; i<delta; i+=1) {
 					cache[cachedBytes + i] = m[i];
 				}
 				if ((cachedBytes + delta) < 128) {
 					cachedBytes += delta;
 					return;
 				} else {
-					crypto_hashblocks(h, cache, arrFactory);
+					crypto_hashblocks(h, cache, arrFactory!);
 					cachedBytes = 0;
 					m = m.subarray(delta);
 					if (m.length === 0) {
-						arrFactory.wipe(cache);
+						arrFactory!.wipe(cache);
 						return;
 					}
 				}
 			}
-			cachedBytes = crypto_hashblocks(h, m, arrFactory);
+			cachedBytes = crypto_hashblocks(h, m, arrFactory!);
 			m = m.subarray(m.length - cachedBytes);
-			for (var i=0; i<cachedBytes; i+=1) {
+			for (let i=0; i<cachedBytes; i+=1) {
 				cache[i] = m[i];
 			}
-			for (var i=cachedBytes; i<cache.length; i+=1) {
+			for (let i=cachedBytes; i<cache.length; i+=1) {
 				cache[i] = 0;
 			}
 		},
 		digest: function(): Uint8Array {
-			if (!cache) { throw new Error("Cannot use destroyed hasher."); }
-			if (!h) { throw new Error("No bytes were hashed so far."); }
+			if (!cache) { throw new Error(`Cannot use destroyed hasher.`); }
+			if (!h) { throw new Error(`No bytes were hashed so far.`); }
 			hash_padded_block(h,
-					cache.subarray(0, cachedBytes),
-					totalLen, arrFactory);
-			var hashResult = h;
-			h = null;
-			arrFactory.wipe(cache);
+				cache.subarray(0, cachedBytes),
+				totalLen, arrFactory!);
+			const hashResult = h;
+			h = undefined;
+			arrFactory!.wipe(cache);
 			totalLen = 0;
 			cachedBytes = 0;
-			arrFactory.wipeRecycled();
+			arrFactory!.wipeRecycled();
 			if (isSingleUse) { this.destroy(); }
 			return hashResult;
 		},
 		destroy: function(): void {
 			if (!cache) { return; }
-			arrFactory.recycle(cache);
-			if (!h) {
-				arrFactory.recycle(h);
-				h = null;
+			arrFactory!.recycle(cache);
+			if (h) {
+				arrFactory!.recycle(h);
+				h = undefined;
 			}
-			arrFactory.wipeRecycled();
-			cache = null;
-			arrFactory = null;
+			arrFactory!.wipeRecycled();
+			cache = undefined as any;
+			arrFactory = undefined;
 		}
 	};
 }

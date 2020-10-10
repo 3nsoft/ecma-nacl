@@ -1,31 +1,31 @@
-/* Copyright(c) 2013 - 2015 3NSoft Inc.
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, you can obtain one at http://mozilla.org/MPL/2.0/. */
+/*
+ Copyright(c) 2013 - 2015, 2020 3NSoft Inc.
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, you can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 /**
  * Testing module lib/boxes/secret_box.js
  */
 
-import nu = require('nodeunit');
-import sbox = require('../../lib/boxes/secret_box');
-import arrays = require('../../lib/util/arrays');
-import testUtil = require('../test-utils');
+import * as sbox from '../../lib/boxes/secret_box';
+import { makeFactory } from '../../lib/util/arrays';
+import { bytesEqual } from '../libs-for-tests/bytes-equal';
 
-var compare = testUtil.compare;
-var arrFactory = arrays.makeFactory();
+const arrFactory = makeFactory();
 
-var firstkey = new Uint8Array(
+const firstkey = new Uint8Array(
 	[ 0x1b,0x27,0x55,0x64,0x73,0xe9,0x85,0xd4,
 	  0x62,0xcd,0x51,0x19,0x7a,0x9a,0x46,0xc7,
 	  0x60,0x09,0x54,0x9e,0xac,0x64,0x74,0xf2,
 	  0x06,0xc4,0xee,0x08,0x44,0xf6,0x83,0x89 ]);
 
-var nonce = new Uint8Array(
+const nonce = new Uint8Array(
 	[ 0x69,0x69,0x6e,0xe9,0x55,0xb6,0x2b,0x73,
 	  0xcd,0x62,0xbd,0xa8,0x75,0xfc,0x73,0xd6,
 	  0x82,0x19,0xe0,0x03,0x6b,0x7a,0x0b,0x37 ]);
 
-var m_padded = new Uint8Array(
+const m_padded = new Uint8Array(
 	[ 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -48,7 +48,7 @@ var m_padded = new Uint8Array(
 	  0xe0,0x82,0xf9,0x37,0x76,0x38,0x48,0x64,
 	  0x5e,0x07,0x05 ]);
 
-var c_padded = new Uint8Array(
+const c_padded = new Uint8Array(
 	[ 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	  0xf3,0xff,0xc7,0x70,0x3f,0x94,0x00,0xe5,
@@ -71,66 +71,60 @@ var c_padded = new Uint8Array(
 	  0x59,0x9b,0x1f,0x65,0x4c,0xb4,0x5a,0x74,
 	  0xe3,0x55,0xa5 ]);
 
-var m = m_padded.subarray(32);
-var c = c_padded.subarray(16);
+const m = m_padded.subarray(32);
+const c = c_padded.subarray(16);
 
-/**
- * Analog of tests/secretbox3.cpp, expected result printed in tests/secretbox3.out.
- */
-export function secretbox3(test: nu.Test) {
-	var result = sbox.pack(m, nonce, firstkey, arrFactory);
-	// result is cipher without the pad
-	compare(test, result, c);
-	// but it is a buffer view that hides these zeros
-	compare(test, new Uint8Array(result.buffer, 0, result.length+16), c_padded);
-	test.equals(result.byteOffset, 16);
-	test.done();
-}
 
-/**
- * Analog of tests/secretbox4.cpp, expected result printed in tests/secretbox4.out.
- */
-export function secretbox4(test: nu.Test) {
-	var result = sbox.open(c, nonce, firstkey, arrFactory);
-	//result is message without the pad
-	compare(test, result, m);
-	//but it is a buffer view that hides these zeros
-	compare(test, new Uint8Array(result.buffer, 0, result.length+32), m_padded);
-	test.equals(result.byteOffset, 32);
-	test.done();
-}
+describe(`secret_box module`, () => {
 
-/**
- * Test box with data less than 32 bytes (bug hunt -- fixed pad-on-fly in stream.xsalsa20_xor)
- */
-export function shortData(test: nu.Test) {
-	var shortM = m.subarray(0, 10);
-	var result = sbox.pack(shortM, nonce, firstkey, arrFactory);
-	compare(test, result.subarray(16), c.subarray(16, 26));
-	result = sbox.open(result, nonce, firstkey, arrFactory);
-	compare(test, result, shortM);
-	test.done();
-}
+	it(`Analog of tests/secretbox3.cpp, expected result printed in tests/secretbox3.out.`, () => {
+		const result = sbox.pack(m, nonce, firstkey, arrFactory);
+		// result is cipher without the pad
+		expect(bytesEqual(result, c)).toBe(true);
+		// but it is a buffer view that hides these zeros
+		expect(bytesEqual(
+			new Uint8Array(result.buffer, 0, result.length+16), c_padded
+		)).toBe(true);
+		expect(result.byteOffset).toBe(16);
+		arrFactory.wipeRecycled();
+	});
 
-/**
- * Test opening of array with nonce and cipher
- */
-export function formatWN(test: nu.Test) {
-	
-	var cWN = sbox.formatWN.pack(m, nonce, firstkey, arrFactory);
-	test.equals(cWN.length, c.length+24);
-	test.equals(cWN.length, m.length+40);
-	test.equals(cWN.byteOffset, 0);
-	compare(test, cWN.subarray(0, 24), nonce);
-	compare(test, cWN.subarray(24), c);
-	
-	var mOpened = sbox.formatWN.open(cWN, firstkey, arrFactory);
-	test.equals(mOpened.byteOffset, 32);
-	compare(test, mOpened, m);
-	// it is a buffer view that hides initial 32 zeros
-	compare(test,
-		new Uint8Array(mOpened.buffer, 0, mOpened.length+32),
-		m_padded);
-	
-	test.done();
-}
+	it(`Analog of tests/secretbox4.cpp, expected result printed in tests/secretbox4.out.`, () => {
+		const result = sbox.open(c, nonce, firstkey, arrFactory);
+		//result is message without the pad
+		expect(bytesEqual(result, m)).toBe(true);
+		//but it is a buffer view that hides these zeros
+		expect(bytesEqual(
+			new Uint8Array(result.buffer, 0, result.length+32), m_padded
+		)).toBe(true);
+		expect(result.byteOffset).toBe(32);
+		arrFactory.wipeRecycled();
+	});
+
+	it(`Test box with data less than 32 bytes (bug hunt -- fixed pad-on-fly in stream.xsalsa20_xor)`, () => {
+		const shortM = m.subarray(0, 10);
+		let result = sbox.pack(shortM, nonce, firstkey, arrFactory);
+		expect(bytesEqual(result.subarray(16), c.subarray(16, 26))).toBe(true);
+		result = sbox.open(result, nonce, firstkey, arrFactory);
+		expect(bytesEqual(result, shortM)).toBe(true);
+		arrFactory.wipeRecycled();
+	});
+
+	it(`Test opening of array with nonce and cipher`, () => {
+		const cWN = sbox.formatWN.pack(m, nonce, firstkey, arrFactory);
+		expect(cWN.length).toBe(c.length+24);
+		expect(cWN.length).toBe(m.length+40);
+		expect(cWN.byteOffset).toBe(0);
+		expect(bytesEqual(cWN.subarray(0, 24), nonce)).toBe(true);
+		expect(bytesEqual(cWN.subarray(24), c)).toBe(true);
+		const mOpened = sbox.formatWN.open(cWN, firstkey, arrFactory);
+		expect(mOpened.byteOffset).toBe(32);
+		expect(bytesEqual(mOpened, m)).toBe(true);
+		// it is a buffer view that hides initial 32 zeros
+		expect(bytesEqual(
+			new Uint8Array(mOpened.buffer, 0, mOpened.length+32), m_padded
+		)).toBe(true);
+		arrFactory.wipeRecycled();
+	});
+
+});
