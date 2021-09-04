@@ -326,8 +326,8 @@ export module formatWN {
 		if (!arrFactory) {
 			arrFactory = makeFactory();
 		}
-		key = new Uint8Array(key);
-		nextNonce = new Uint8Array(nextNonce);
+		key = makeUint8ArrayCopy(key);
+		nextNonce = makeUint8ArrayCopy(nextNonce);
 		let counter = 0;
 		const counterMax = Math.floor(0xfffffffffffff / delta);
 		
@@ -381,7 +381,7 @@ export module formatWN {
 		if (!arrFactory) {
 			arrFactory = makeFactory();
 		}
-		key = new Uint8Array(key);
+		key = makeUint8ArrayCopy(key);
 		
 		// arrange and freeze resulting object
 		const decryptor: Decryptor = {
@@ -404,6 +404,12 @@ export module formatWN {
 
 }
 Object.freeze(formatWN);
+
+function makeUint8ArrayCopy(arr: Uint8Array): Uint8Array {
+	const copy = new Uint8Array(arr.length);
+	copy.set(arr);
+	return copy;
+}
 
 export const NONCE_LENGTH = 24;
 export const KEY_LENGTH = 32;
