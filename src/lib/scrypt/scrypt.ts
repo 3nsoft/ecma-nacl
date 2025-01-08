@@ -334,7 +334,7 @@ export function scrypt(
 	const progShow: ProgressIndicator = {
 		completed: 3,
 		deltaWork: 1,
-		deltaN: Math.floor(2*N*p / 93),
+		deltaN: Math.floor(2*N*p / (100 - 3)),
 		addDelta: function() {
 			this.completed += this.deltaWork;
 			progressCB(this.completed);

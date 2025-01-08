@@ -250,7 +250,7 @@ export function wipe(...arrays: (Uint8Array|Uint32Array)[]): void {
 }
 
 export const makeArrayForOutput: (len: number) => Uint8Array = (
-	(Buffer && (typeof Buffer.alloc === 'function')) ?
+	((globalThis as any).Buffer && (typeof Buffer.alloc === 'function')) ?
 		len => Buffer.alloc(len) : len => new Uint8Array(len));
 
 
